@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Middleware_Indolge")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b8d215bdcf730085251ac1ca28cb6ae775039a99")]
 [assembly: System.Reflection.AssemblyProductAttribute("Middleware_Indolge")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Middleware_Indolge")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
