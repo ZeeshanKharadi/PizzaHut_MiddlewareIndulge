@@ -17,6 +17,11 @@
         public string posId { get; set; }
     }
 
-   
+    public class CancelKDSOrderExt
+    {
+        public string OrderId { get; set; }
+    }
+
+
 
 }

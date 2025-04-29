@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Hosting.Server;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Data.SqlClient;
 using Middleware_Indolge.Models;
 using Middleware_Indolge.Services.Interfaces;
@@ -55,27 +57,89 @@ namespace Middleware_Indolge.Services
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
         {
             CreateOrderResponse response = new CreateOrderResponse();
-
-            // Insert into DynamicPosOrder Table
-            InsertDynamicPOSOrder(request);
-            string apiResult = await SendOrderToExternalApi(request);
-            response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
-            return response;
-
+            if (!IsOrderAlreadyExist(request.ThirdPartyOrderId))
+            {
+                // Insert into DynamicPosOrder Table
+                InsertDynamicPOSOrder(request);
+                string apiResult = await SendOrderToExternalApi(request);
+                response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                return response;
+            }
+            else
+            {
+                response.Message = "Order Already Exist";
+            }
+                return response;
         }
 
         public async Task<CreateOrderResponse> UpdateOrder(UpdateOrderModel request, string ThirdPartyOrderId)
         {
+
             CreateOrderResponse response = new CreateOrderResponse();
             var json = await GetRequestJsonByThirdPartyOrderId(ThirdPartyOrderId);
-
-            if (!string.IsNullOrEmpty(json))
+            string PreviousOrderStatus;
+            if (request.OrderStatus == "01") // Cancelled Kds Order
             {
-                var storedOrder = JsonConvert.DeserializeObject<CreateOrderModel>(json);
-                // Assign ExtItemId to ItemId for each sales line
-                storedOrder.SalesLines.ForEach(line => line.ItemId = line.ExtItemId);
-                string apiResult = await SendSaleOrderToExternalApi(storedOrder);
-                response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                PreviousOrderStatus = GetOrderStatus(ThirdPartyOrderId);
+                if (PreviousOrderStatus == "0")
+                {
+                    if (!string.IsNullOrEmpty(json))
+                    {
+                        string apiResult = await SendCancelKDSOrderToExternalApi(ThirdPartyOrderId);
+                        response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                        UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
+                    }
+                }
+                else
+                {
+                    response.Message = "Order Can't cancelled";
+                }
+            }
+            else if (request.OrderStatus == "02") // Sale
+            {
+                PreviousOrderStatus = GetOrderStatus(ThirdPartyOrderId);
+                if (PreviousOrderStatus == "0")
+                {
+                    if (!string.IsNullOrEmpty(json))
+                    {
+                        var storedOrder = JsonConvert.DeserializeObject<CreateOrderModel>(json);
+                        // Assign ExtItemId to ItemId for each sales line
+                        storedOrder.SalesLines.ForEach(line => line.ItemId = line.ExtItemId);
+                        string apiResult = await SendSaleOrderToExternalApi(storedOrder);
+                        response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                        UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
+                    }
+                }
+                else
+                {
+                    response.Message = "Order Already marked as Sale/ Order can't be marked as sale ";
+                }
+            }
+            else if (request.OrderStatus == "03") // Return
+            {
+                PreviousOrderStatus = GetOrderStatus(ThirdPartyOrderId);
+                if (PreviousOrderStatus == "02")
+                {
+                    if (!string.IsNullOrEmpty(json))
+                    {
+                        var storedOrder = JsonConvert.DeserializeObject<CreateOrderModel>(json);
+                        // Assign ExtItemId to ItemId for each sales line
+                        storedOrder.SalesLines.ForEach(line => line.ItemId = line.ExtItemId);
+                        // mapping update Order Tender Type
+                        storedOrder.TenderTypeId = request.TenderTypeId;
+                        string apiResult = await SendReturnOrderToExternalApi(storedOrder);
+                        response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                        UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
+                    }
+                }
+                else
+                {
+                    response.Message = "Order can't returned ";
+                }
+            }
+            else
+            {
+                response = new CreateOrderResponse();
             }
             return response;
         }
@@ -153,10 +217,71 @@ namespace Middleware_Indolge.Services
         }
         public async Task<string> SendSaleOrderToExternalApi(CreateOrderModel request)
         {
-            request.Company = "Piz";
+            request.Company = "php";
             request.BusinessDateCustom = request.TransDate;
             string apiUrl = "http://localhost:1638/api/OrderPOS/complete-order";
             return await ApiHelper.PostAsync(apiUrl, request);
         }
+
+        public async Task<string> SendReturnOrderToExternalApi(CreateOrderModel request)
+        {
+            request.Company = "php";
+            request.BusinessDateCustom = request.TransDate;
+            string apiUrl = "http://localhost:1638/api/OrderPOS/return-order";
+            return await ApiHelper.PostAsync(apiUrl, request);
+        }
+
+        public async Task<string> SendCancelKDSOrderToExternalApi(string ThirdPartyOrderId)
+        {
+
+            string apiUrl = "http://localhost:1638/api/OrderKDS/cancelKDSOrder/?OrderId=" + ThirdPartyOrderId;
+            return await ApiHelper.DeleteAsync(apiUrl);
+        }
+
+        public bool IsOrderAlreadyExist(string thirdPartyOrderId)
+        {
+            string query = "SELECT COUNT(*) FROM dbo.DynamicPOSOrders WHERE thirdPartyOrderId = @thirdPartyOrderId";
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.Add(new SqlParameter("@thirdPartyOrderId", SqlDbType.VarChar) { Value = thirdPartyOrderId });
+
+                connection.Open();
+                int count = (int)command.ExecuteScalar();
+                return count > 0;
+            }
+        }
+
+        public string GetOrderStatus(string thirdPartyOrderId)
+        {
+            string query = "SELECT orderstatus FROM dbo.DynamicPOSOrders WHERE thirdPartyOrderId = @thirdPartyOrderId";
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.Add(new SqlParameter("@thirdPartyOrderId", SqlDbType.VarChar) { Value = thirdPartyOrderId });
+
+                connection.Open();
+                var result = command.ExecuteScalar();
+                return result?.ToString(); // Returns null if no record found
+            }
+        }
+        public void UpdateOrderStatus(string thirdPartyOrderId, string orderStatus)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (SqlCommand command = new SqlCommand("UpdateDynamicPOSOrder", connection))
+            {
+                command.CommandType = CommandType.StoredProcedure;
+
+                command.Parameters.Add(new SqlParameter("@thirdPartyOrderId", SqlDbType.VarChar) { Value = thirdPartyOrderId });
+                command.Parameters.Add(new SqlParameter("@orderStatus", SqlDbType.VarChar) { Value = orderStatus });
+
+                connection.Open();
+                command.ExecuteNonQuery(); // Use ExecuteNonQuery for UPDATE
+            }
+        }
+
+
     }
 }

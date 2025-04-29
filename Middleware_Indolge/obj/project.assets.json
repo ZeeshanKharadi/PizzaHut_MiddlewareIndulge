@@ -1861,6 +1861,7 @@
     "net9.0": [
       "Microsoft.AspNetCore.OpenApi >= 9.0.0",
       "Microsoft.Data.SqlClient >= 6.0.1",
+      "Microsoft.SqlServer.Server >= 1.0.0",
       "Newtonsoft.Json >= 13.0.3",
       "Swashbuckle.AspNetCore.Swagger >= 8.1.1",
       "Swashbuckle.AspNetCore.SwaggerGen >= 8.1.1",
@@ -1925,6 +1926,10 @@
           "Microsoft.Data.SqlClient": {
             "target": "Package",
             "version": "[6.0.1, )"
+          },
+          "Microsoft.SqlServer.Server": {
+            "target": "Package",
+            "version": "[1.0.0, )"
           },
           "Newtonsoft.Json": {
             "target": "Package",

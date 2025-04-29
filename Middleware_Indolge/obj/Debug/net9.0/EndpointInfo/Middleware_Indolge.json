@@ -383,6 +383,10 @@
       "UpdateOrderModel": {
         "type": "object",
         "properties": {
+          "tenderTypeId": {
+            "type": "string",
+            "nullable": true
+          },
           "orderStatus": {
             "type": "string",
             "nullable": true

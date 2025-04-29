@@ -1,6 +1,6 @@
 ﻿namespace Middleware_Indolge.Models
 {
-    public class CreateOrderModel
+    public sealed class CreateOrderModel
     {
 
         public string Currency { get; set; }
@@ -15,19 +15,19 @@
         public int NumberOfPaymentLines { get; set; }
         public string Store { get; set; }
         public int Type { get; set; }
-        public string TenderTypeId { get; set; }
+        public string? TenderTypeId { get; set; }
         public decimal AmountCur { get; set; }
         public string ThirdPartyOrderId { get; set; }
         public DateTime BusinessDateCustom { get; set; }
         public decimal DiscAmount { get; set; }
         public decimal DiscAmountWithoutTax { get; set; }
-        public string Comment { get; set; }
+        public string? Comment { get; set; }
         public string? Floor { get; set; }
         public string? Table { get; set; }
         public string? Server { get; set; }
         public int? Person { get; set; }
         public string TaxGroup { get; set; }
-        public string DiscountOfferId { get; set; }
+        public string? DiscountOfferId { get; set; }
         public List<SalesLine> SalesLines { get; set; }
         public string OrderSource { get; set; }
         public string? Company { get; set; }
@@ -46,10 +46,10 @@
         public string TaxItemGroup { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal ItemPriceExcTax { get; set; }
-        public string LineComment { get; set; }
+        public string? LineComment { get; set; }
         public decimal DiscAmount { get; set; }
         public decimal DiscAmountWithoutTax { get; set; }
-        public string Crust { get; set; }
-        public string Size { get; set; }
+        public string? Crust { get; set; }
+        public string? Size { get; set; }
     }
 }
