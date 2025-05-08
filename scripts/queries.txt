@@ -1,0 +1,44 @@
+USE [Middlewaredb]
+GO
+
+/****** Object:  Table [dbo].[DynamicPOSOrders]    Script Date: 5/8/2025 11:31:39 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[DynamicPOSOrders](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[StoreId] [varchar](20) NOT NULL,
+	[ThirdPartyOrderId] [varchar](100) NOT NULL,
+	[TransDate] [datetime] NOT NULL,
+	[OrderSource] [varchar](50) NULL,
+	[OrderStatus] [varchar](10) NOT NULL,
+	[RequestJson] [nvarchar](max) NOT NULL,
+	[CreatedDateTime] [datetime] NULL,
+	[ModifiedDateTime] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[DynamicPOSOrders] ADD  DEFAULT (getdate()) FOR [CreatedDateTime]
+GO
+
+
+CREATE TABLE [dbo].[Stores](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[StoreId] [varchar](50) NULL,
+	[StoreName] [varchar](100) NULL,
+	[StoreUrl] [varchar](255) NULL,
+	[StoreActive] [varchar](10) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+

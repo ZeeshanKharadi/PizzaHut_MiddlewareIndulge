@@ -1,0 +1,40 @@
+USE [Middlewaredb]
+GO
+
+/****** Object:  StoredProcedure [dbo].[InsertDynamicPOSOrder]    Script Date: 5/8/2025 11:32:47 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE PROCEDURE [dbo].[InsertDynamicPOSOrder]
+    @StoreId VARCHAR(20),
+    @ThirdPartyOrderId VARCHAR(100),
+    @TransDate DATETIME,
+    @OrderSource VARCHAR(50),
+    @OrderStatus INT,
+    @RequestJson NVARCHAR(MAX)
+AS
+BEGIN
+    INSERT INTO DynamicPOSOrders 
+    (StoreId, ThirdPartyOrderId, TransDate, OrderSource, OrderStatus, RequestJson, CreatedDateTime, ModifiedDateTime)
+    VALUES
+    (@StoreId, @ThirdPartyOrderId, @TransDate, @OrderSource, @OrderStatus, @RequestJson, GETDATE(), NULL);
+END
+GO
+
+
+CREATE PROCEDURE [dbo].[UpdateDynamicPOSOrder]
+    @thirdPartyOrderId VARCHAR(100),
+    @orderStatus VARCHAR(50)
+AS
+BEGIN
+    UPDATE dbo.DynamicPOSOrders
+    SET OrderStatus = @orderStatus, ModifiedDateTime = GETDATE()
+    WHERE thirdPartyOrderId = @thirdPartyOrderId
+END
+GO
+
