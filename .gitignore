@@ -4,3 +4,8 @@
 
 /.vs/Middleware_Indolge/v17/DocumentLayout.tmp.json
 *.vsidx
+*.bin
+/.vs/Middleware_Indolge/v17/DocumentLayout.backup.json
+/.vs/Middleware_Indolge/v17/.suo
+/.vs/Middleware_Indolge/v17/.futdcache.v2
+/.vs/Middleware_Indolge/v17/DocumentLayout.json
