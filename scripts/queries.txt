@@ -42,3 +42,36 @@ PRIMARY KEY CLUSTERED
 ) ON [PRIMARY]
 GO
 
+CREATE TABLE Users (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    UserId NVARCHAR(100) UNIQUE NOT NULL, -- could be username or email
+    PasswordHash NVARCHAR(255) NOT NULL,
+    HashAlgorithm NVARCHAR(50) NOT NULL,  -- e.g., bcrypt, SHA-256
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    LastLoginAt DATETIME NULL
+);
+
+
+
+CREATE TABLE Tokens (
+    TokenId INT PRIMARY KEY IDENTITY(1,1),
+    UserId NVARCHAR(100) NOT NULL,  -- foreign key to Users.UserId
+    Token NVARCHAR(255) NOT NULL,
+    TokenGenerated DATETIME DEFAULT GETDATE(),
+    TokenExpiry DATETIME NOT NULL,
+    IsValid BIT DEFAULT 1,
+    IpAddress NVARCHAR(45),         -- optional, IPv6 support
+    UserAgent NVARCHAR(255)         -- optional, useful for logging
+);
+
+
+CREATE TABLE LoginAttempts (
+    AttemptId INT PRIMARY KEY IDENTITY(1,1),
+    UserId NVARCHAR(100) NOT NULL,
+    AttemptedAt DATETIME DEFAULT GETDATE(),
+    IpAddress NVARCHAR(45),
+    UserAgent NVARCHAR(255),
+    WasSuccessful BIT,
+    FailureReason NVARCHAR(255) NULL
+);

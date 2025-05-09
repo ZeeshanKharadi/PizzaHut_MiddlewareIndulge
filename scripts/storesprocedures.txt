@@ -38,3 +38,15 @@ BEGIN
 END
 GO
 
+
+CREATE PROCEDURE InsertToken
+    @UserId NVARCHAR(100),
+    @Token NVARCHAR(255),
+    @TokenExpiry DATETIME,
+    @IpAddress NVARCHAR(45),
+    @UserAgent NVARCHAR(255)
+AS
+BEGIN
+    INSERT INTO Tokens (UserId, Token, TokenExpiry, IpAddress, UserAgent)
+    VALUES (@UserId, @Token, @TokenExpiry, @IpAddress, @UserAgent)
+END
