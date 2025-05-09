@@ -9,9 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Register services
 builder.Services.AddControllers();
 builder.Services.AddScoped<ICreateOrderPosService, CreateOrderPOSService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 // Swagger configuration
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo

@@ -1,5 +1,31 @@
 [
   {
+    "ContainingType": "Middleware_Indolge.Controllers.AuthenticationController",
+    "Method": "Login",
+    "RelativePath": "api/Authentication/Login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Middleware_Indolge.Models.LoginModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Middleware_Indolge.Models.LoginResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "Middleware_Indolge.Controllers.OrderPOSController",
     "Method": "CreateOrder",
     "RelativePath": "api/OrderPOS/createOrder",
