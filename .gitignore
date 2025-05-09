@@ -25,3 +25,5 @@
 /Middleware_Indolge/obj/Debug/net9.0/EndpointInfo/Middleware_Indolge.json
 /Middleware_Indolge/bin/Debug/net9.0/Middleware_Indolge.pdb
 /Middleware_Indolge/bin/Debug/net9.0/Middleware_Indolge.dll
+/.vs/Middleware_Indolge/DesignTimeBuild/.dtbcache.v2
+*.sqlite
