@@ -31,6 +31,24 @@
         public List<SalesLine> SalesLines { get; set; }
         public string OrderSource { get; set; }
         public string? Company { get; set; }
+        public string orderTime { get; set; }
+        public string firstName { get; set; }
+        public string? lastName { get; set; }
+        public string city { get; set; }
+        public string? street { get; set; }
+        public string addressNo { get; set; }
+        public string? secondaryAddress { get; set; }
+        public string? postCode { get; set; }
+        public string? phone { get; set; }
+        public string? email { get; set; }
+        public string? entrance { get; set; }
+        public string? carrierInstructions { get; set; }
+        public string? cookInstructions { get; set; }
+        public decimal lat { get; set; }
+        public decimal lng { get; set; }
+        public int? clientId { get; set; }
+        public bool? isNotPaid { get; set; }
+        public bool? sendMessage { get; set; }
     }
 
     public class SalesLine
@@ -51,5 +69,7 @@
         public decimal DiscAmountWithoutTax { get; set; }
         public string? Crust { get; set; }
         public string? Size { get; set; }
+        public int side { get; set; }
+        public string position { get; set; }
     }
 }
