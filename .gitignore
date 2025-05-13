@@ -10,3 +10,7 @@
 /.vs/Middleware_Indolge/v17/.futdcache.v2
 /.vs/Middleware_Indolge/v17/DocumentLayout.json
 *.cache
+/Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.AssemblyInfoInputs.cache
+*.sqlite-journal
+/.vs/slnx.sqlite
+/Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.AssemblyInfo.cs
