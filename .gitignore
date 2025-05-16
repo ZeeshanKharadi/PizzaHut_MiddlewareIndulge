@@ -14,3 +14,4 @@
 *.sqlite-journal
 /.vs/slnx.sqlite
 /Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.AssemblyInfo.cs
+/Middleware_Indolge/obj/Release/net9.0/Middleware_Indolge.AssemblyInfo.cs
