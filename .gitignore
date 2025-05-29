@@ -29,3 +29,12 @@
 *.sqlite
 /Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.AssemblyInfo.cs
 /Middleware_Indolge/obj/Release/net9.0/Middleware_Indolge.AssemblyInfo.cs
+*.dll
+*.exe
+*.pdb
+*.json
+*.zip
+*.txt
+*.props
+/Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.genruntimeconfig.cache
+*.Up2Date
