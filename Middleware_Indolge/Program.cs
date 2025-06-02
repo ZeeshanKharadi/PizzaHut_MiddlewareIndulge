@@ -45,6 +45,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 app.UseMiddleware<TokenValidationMiddleware>();
+app.UseMiddleware<ApiLoggingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
