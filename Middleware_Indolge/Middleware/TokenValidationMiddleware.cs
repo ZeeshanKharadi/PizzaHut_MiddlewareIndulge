@@ -42,7 +42,7 @@ namespace Middleware_Indolge.Middleware
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 conn.Open();
-                string query = "SELECT COUNT(*) FROM UserTokens WHERE Token = @Token AND Expiry > GETUTCDATE()";
+                string query = "SELECT COUNT(*) FROM Tokens WHERE Token = @Token AND TokenExpiry > GETUTCDATE()";
                 SqlCommand cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@Token", token);
                 int count = (int)cmd.ExecuteScalar();

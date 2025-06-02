@@ -6,6 +6,8 @@ using Middleware_Indolge.Models;
 using Middleware_Indolge.Services.Interfaces;
 using Newtonsoft.Json;
 using System.Data;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace Middleware_Indolge.Services
 {
@@ -40,6 +42,7 @@ namespace Middleware_Indolge.Services
         private decimal _taxValue;
         //private readonly ISender _mediator;
         private string _terminalIdOverride;
+        private string _dynamicsURL;
 
         public CreateOrderPOSService(IConfiguration configuration)
         {
@@ -52,6 +55,7 @@ namespace Middleware_Indolge.Services
             _terminalId = _configuration.GetSection("Keys:TerminalId").Value;
             _isTaxImplemented = _configuration.GetSection("Keys:TaxApplied").Value;
             _terminalIdOverride = _configuration.GetSection("Keys:_terminalIdOverride").Value;
+            _dynamicsURL = _configuration.GetSection("AppInformation:UrlTemplate").Value;
         }
 
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
@@ -61,7 +65,9 @@ namespace Middleware_Indolge.Services
             {
                 // Insert into DynamicPosOrder Table
                 InsertDynamicPOSOrder(request);
-                string apiResult = await SendOrderToExternalApi(request);
+                // Get store URL 
+                StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
+                string apiResult = await SendOrderToExternalApiV2(request,getStoreinfo);
                 response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                 return response;
             }
@@ -85,7 +91,9 @@ namespace Middleware_Indolge.Services
                 {
                     if (!string.IsNullOrEmpty(json))
                     {
-                        string apiResult = await SendCancelKDSOrderToExternalApi(ThirdPartyOrderId);
+                        var requestObject = JsonConvert.DeserializeObject<CreateOrderModel>(json);
+                        StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(requestObject.Store);
+                        string apiResult = await SendCancelKDSOrderToExternalApiV2(ThirdPartyOrderId, getStoreinfo);
                         response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                         UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
                     }
@@ -215,6 +223,13 @@ namespace Middleware_Indolge.Services
             string apiUrl = "http://localhost:1638/api/OrderKDS/CreateKDSOrder";
             return await ApiHelper.PostAsync(apiUrl, externalRequest);
         }
+
+        public async Task<string> SendOrderToExternalApiV2(CreateOrderModel request, StoreInfo storeinfo)
+        {
+            // Safely combine base URL and endpoint
+            string apiUrl = $"{storeinfo.DTCreateUrl.TrimEnd('/')}/api/OrderKDS/createOrderForDragonTail";
+            return await ApiHelper.PostAsync(apiUrl, request);
+        }
         public async Task<string> SendSaleOrderToExternalApi(CreateOrderModel request)
         {
             request.Company = "php";
@@ -237,6 +252,13 @@ namespace Middleware_Indolge.Services
             string apiUrl = "http://localhost:1638/api/OrderKDS/cancelKDSOrder/?OrderId=" + ThirdPartyOrderId;
             return await ApiHelper.DeleteAsync(apiUrl);
         }
+        public async Task<string> SendCancelKDSOrderToExternalApiV2(string ThirdPartyOrderId, StoreInfo storeinfo)
+        {
+            // Safely combine base URL and endpoint
+            string apiUrl = $"{storeinfo.DTCreateUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail";
+            return await ApiHelper.PutAsync(apiUrl, ThirdPartyOrderId);
+        }
+
 
         public bool IsOrderAlreadyExist(string thirdPartyOrderId)
         {
@@ -281,6 +303,51 @@ namespace Middleware_Indolge.Services
                 command.ExecuteNonQuery(); // Use ExecuteNonQuery for UPDATE
             }
         }
+
+        public async Task<string?> GetAccessTokenAsync()
+        {
+            using var client = new HttpClient();
+
+            var values = new Dictionary<string, string>
+    {
+        { "grant_type", "client_credentials" },
+        { "client_id", "245676da-021d-412a-ac81-b0dc4c59adc3" },
+        { "client_secret", "BID8Q~Fhk1ntehY~ArtD8BntWv8BYUFF31NDvanN" },
+        { "resource", "https://pizzahutpakistan-uat.sandbox.operations.dynamics.com" }
+    };
+
+            var content = new FormUrlEncodedContent(values);
+
+            var response = await client.PostAsync("https://login.microsoftonline.com/0fb2a64d-04fd-423a-a605-8d7881ba7ec3/oauth2/token", content);
+            if (!response.IsSuccessStatusCode) return null;
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var tokenData = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseString);
+            return tokenData?["access_token"]?.ToString();
+        }
+
+        public async Task<StoreInfo?> GetStoreInfoFromDynamicsAsync(string defaultCustAccount)
+        {
+            string? token = await GetAccessTokenAsync();
+            if (token == null) return null;
+
+            string urlTemplate = _configuration["AppInformation:UrlTemplate"];
+            string finalUrl = string.Format(urlTemplate, defaultCustAccount);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await client.GetAsync(finalUrl);
+            if (!response.IsSuccessStatusCode) return null;
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            var result = JsonConvert.DeserializeObject<StoreInfoWrapper>(responseContent);
+
+            return result?.Value?.FirstOrDefault(); // Return the first matched store info
+        }
+
+
 
 
     }
