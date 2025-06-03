@@ -1,3 +1,6 @@
 ALTER TABLE Tokens
 ADD CONSTRAINT FK_Tokens_Users_UserId
 FOREIGN KEY (UserId) REFERENCES Users(UserId);
+
+alter table ax.retailinventtable
+add POSCode nvarchar(30), Channel nvarchar(30)

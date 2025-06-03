@@ -75,3 +75,18 @@ CREATE TABLE LoginAttempts (
     WasSuccessful BIT,
     FailureReason NVARCHAR(255) NULL
 );
+
+CREATE TABLE ApiLogs (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    RequestMethod NVARCHAR(10),
+    RequestPath NVARCHAR(500),
+    RequestQuery NVARCHAR(MAX),
+    RequestBody NVARCHAR(MAX),
+    ResponseBody NVARCHAR(MAX),
+    ResponseStatusCode INT,
+    RequestTimestamp DATETIME,
+    ResponseTimestamp DATETIME
+);
+
+
+
