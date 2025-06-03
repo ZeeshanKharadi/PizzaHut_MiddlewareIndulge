@@ -44,6 +44,7 @@
         public string? entrance { get; set; }
         public string? carrierInstructions { get; set; }
         public string? cookInstructions { get; set; }
+        public string orderChannel { get; set; }
         public decimal lat { get; set; }
         public decimal lng { get; set; }
         public int? clientId { get; set; }

@@ -16,9 +16,7 @@ namespace Middleware_Indolge.Services
     public class AuthenticationService : IAuthenticationService
     {
 
-        private string _connectionString_CHZ_MIDDLEWARE;
         private string _connectionString;
-        private string _connectionString_KFC;
         //private InlineQueryResponse lastRecordResponse;
         private string _connectionString_RSSU;
         private readonly IConfiguration _configuration;
@@ -44,6 +42,7 @@ namespace Middleware_Indolge.Services
         private decimal _taxValue;
         //private readonly ISender _mediator;
         private string _terminalIdOverride;
+        private int _tokenExpiryInHour;
 
         private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -52,14 +51,12 @@ namespace Middleware_Indolge.Services
         {
             _configuration = configuration;
             _httpContextAccessor = httpContextAccessor;
-            _connectionString_CHZ_MIDDLEWARE = configuration.GetConnectionString("AppDbConnection");
             _connectionString = configuration.GetConnectionString("AppDbConnection");
-            _connectionString_KFC = configuration.GetConnectionString("RSSUConnection");
             _connectionString_RSSU = configuration.GetConnectionString("RSSUConnection");
-            _terminalId = _configuration.GetSection("Keys:TerminalId").Value;
-            _terminalId = _configuration.GetSection("Keys:TerminalId").Value;
-            _isTaxImplemented = _configuration.GetSection("Keys:TaxApplied").Value;
-            _terminalIdOverride = _configuration.GetSection("Keys:_terminalIdOverride").Value;
+            if (!int.TryParse(_configuration["Keys:TokenExpiryInHours"], out _tokenExpiryInHour))
+            {
+                _tokenExpiryInHour = 2; // fallback/default value
+            }
         }
 
         public async Task<LoginResponse> Login(LoginModel request)
@@ -69,7 +66,7 @@ namespace Middleware_Indolge.Services
             if (IsLoginValid(request.username, request.password))
             {
                 string token = Guid.NewGuid().ToString();
-                DateTime expiry = DateTime.UtcNow.AddHours(2);
+                DateTime expiry = DateTime.UtcNow.AddHours(_tokenExpiryInHour);
                 string ipAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
                 string userAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString();
 

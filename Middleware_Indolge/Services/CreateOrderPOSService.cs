@@ -14,9 +14,7 @@ namespace Middleware_Indolge.Services
     public class CreateOrderPOSService : ICreateOrderPosService
     {
 
-        private string _connectionString_CHZ_MIDDLEWARE;
         private string _connectionString;
-        private string _connectionString_KFC;
         //private InlineQueryResponse lastRecordResponse;
         private string _connectionString_RSSU;
         private readonly IConfiguration _configuration;
@@ -47,11 +45,8 @@ namespace Middleware_Indolge.Services
         public CreateOrderPOSService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _connectionString_CHZ_MIDDLEWARE = configuration.GetConnectionString("AppDbConnection");
             _connectionString = configuration.GetConnectionString("AppDbConnection");
-            _connectionString_KFC = configuration.GetConnectionString("RSSUConnection");
             _connectionString_RSSU = configuration.GetConnectionString("RSSUConnection");
-            _terminalId = _configuration.GetSection("Keys:TerminalId").Value;
             _terminalId = _configuration.GetSection("Keys:TerminalId").Value;
             _isTaxImplemented = _configuration.GetSection("Keys:TaxApplied").Value;
             _terminalIdOverride = _configuration.GetSection("Keys:_terminalIdOverride").Value;

@@ -10,7 +10,7 @@ namespace Middleware_Indolge.Middleware
         public ApiLoggingMiddleware(RequestDelegate next, IConfiguration configuration)
         {
             _next = next;
-            _connectionString = configuration.GetConnectionString("YourDbConnection"); // from appsettings.json
+            _connectionString = configuration.GetConnectionString("AppDbConnection"); // from appsettings.json
         }
 
         public async Task InvokeAsync(HttpContext context)
