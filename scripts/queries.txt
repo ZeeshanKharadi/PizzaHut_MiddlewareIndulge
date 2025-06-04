@@ -1,4 +1,12 @@
-USE [Middlewaredb]
+
+
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'Middlewaredb')
+BEGIN
+    CREATE DATABASE [Middlewaredb];
+END
+GO
+
+USE [Middlewaredb];
 GO
 
 /****** Object:  Table [dbo].[DynamicPOSOrders]    Script Date: 5/8/2025 11:31:39 AM ******/
