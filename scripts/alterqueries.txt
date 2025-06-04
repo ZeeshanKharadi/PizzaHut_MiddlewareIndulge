@@ -1,6 +1,30 @@
+--Custom Db
+
 ALTER TABLE Tokens
 ADD CONSTRAINT FK_Tokens_Users_UserId
 FOREIGN KEY (UserId) REFERENCES Users(UserId);
 
+
+-- RetailChannelDatabase
 alter table ax.retailinventtable
 add POSCode nvarchar(30), Channel nvarchar(30)
+
+-- For schema
+USE [Middlewaredb]
+GO
+
+INSERT INTO [dbo].[Users]
+           ([UserId]
+           ,[PasswordHash]
+           ,[HashAlgorithm]
+           ,[IsActive]
+           ,[CreatedAt]
+           ,[LastLoginAt])
+     VALUES
+           ('simplex'
+           ,'oFuduft+i06V/ugAjKIdusPtWJ9dN0GhmAzz8kRRX18='
+           ,'SHA-256'
+           ,1
+           ,'2025-05-09 12:13:59.520'
+           ,NULL)
+GO
