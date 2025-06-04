@@ -38,3 +38,6 @@
 *.props
 /Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.genruntimeconfig.cache
 *.Up2Date
+/Middleware_Indolge/bin/Debug/net9.0/Middleware_Indolge.exe
+/Middleware_Indolge/obj/Debug/net9.0/Middleware_Indolge.csproj.FileListAbsolute.txt
+/Middleware_Indolge/obj/Debug/net9.0/apphost.exe
