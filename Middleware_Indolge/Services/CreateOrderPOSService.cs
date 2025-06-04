@@ -41,6 +41,11 @@ namespace Middleware_Indolge.Services
         //private readonly ISender _mediator;
         private string _terminalIdOverride;
         private string _dynamicsURL;
+        private string _dynamicsLoginGrantType;
+        private string _dynamicsLoginResource;
+        private string _dynamicsLoginClientid;
+        private string _dynamicsLoginClientsecret;
+        private string _dynamicsLoginUrl;
 
         public CreateOrderPOSService(IConfiguration configuration)
         {
@@ -51,6 +56,11 @@ namespace Middleware_Indolge.Services
             _isTaxImplemented = _configuration.GetSection("Keys:TaxApplied").Value;
             _terminalIdOverride = _configuration.GetSection("Keys:_terminalIdOverride").Value;
             _dynamicsURL = _configuration.GetSection("AppInformation:UrlTemplate").Value;
+            _dynamicsLoginGrantType = _configuration.GetSection("AppInformation:LoginGrantType").Value;
+            _dynamicsLoginResource = _configuration.GetSection("AppInformation:LoginResource").Value;
+            _dynamicsLoginClientid = _configuration.GetSection("AppInformation:LoginClientId").Value;
+            _dynamicsLoginClientsecret = _configuration.GetSection("AppInformation:LoginClientSecret").Value;
+            _dynamicsLoginUrl = _configuration.GetSection("AppInformation:LoginUrl").Value;
         }
 
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
@@ -63,6 +73,17 @@ namespace Middleware_Indolge.Services
                 // Get store URL 
                 StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
                 string apiResult = await SendOrderToExternalApiV2(request,getStoreinfo);
+                //var deserializedResult = JsonConvert.DeserializeObject<dynamic>(apiResult);
+
+                //if (deserializedResult?.status == "ok")
+                //{
+                //    response.Message = "Order Created Successfully";
+                //    response.HttpStatusCode = 200;
+                //}
+                //else
+                //{
+                //    response.Message = "Failed to create order By DT";
+                //}
                 response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                 return response;
             }
@@ -305,15 +326,15 @@ namespace Middleware_Indolge.Services
 
             var values = new Dictionary<string, string>
     {
-        { "grant_type", "client_credentials" },
-        { "client_id", "245676da-021d-412a-ac81-b0dc4c59adc3" },
-        { "client_secret", "BID8Q~Fhk1ntehY~ArtD8BntWv8BYUFF31NDvanN" },
-        { "resource", "https://pizzahutpakistan-uat.sandbox.operations.dynamics.com" }
+        { "grant_type", _dynamicsLoginGrantType},
+        { "client_id", _dynamicsLoginClientid },
+        { "client_secret", _dynamicsLoginClientsecret },
+        { "resource", _dynamicsLoginResource }
     };
 
             var content = new FormUrlEncodedContent(values);
 
-            var response = await client.PostAsync("https://login.microsoftonline.com/0fb2a64d-04fd-423a-a605-8d7881ba7ec3/oauth2/token", content);
+            var response = await client.PostAsync(_dynamicsLoginUrl, content);
             if (!response.IsSuccessStatusCode) return null;
 
             var responseString = await response.Content.ReadAsStringAsync();
