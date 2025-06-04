@@ -18,3 +18,4 @@
 *.dll
 *.pubxml
 /.vs/Middleware_Indolge/DesignTimeBuild/.dtbcache.v2
+/.vs/VSWorkspaceState.json
