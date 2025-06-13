@@ -1,11 +1,16 @@
-﻿using Azure.Core;
+﻿using Azure;
+using Azure.Core;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Data.SqlClient;
+using Middleware_Indolge.Helper;
 using Middleware_Indolge.Models;
 using Middleware_Indolge.Services.Interfaces;
 using Newtonsoft.Json;
+
+using POS_Integration_CommonCore.Helpers;
 using System.Data;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -65,33 +70,43 @@ namespace Middleware_Indolge.Services
 
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
         {
-            CreateOrderResponse response = new CreateOrderResponse();
-            if (!IsOrderAlreadyExist(request.ThirdPartyOrderId))
+            try
             {
-                // Insert into DynamicPosOrder Table
-                InsertDynamicPOSOrder(request);
-                // Get store URL 
-                StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
-                string apiResult = await SendOrderToExternalApiV2(request,getStoreinfo);
-                //var deserializedResult = JsonConvert.DeserializeObject<dynamic>(apiResult);
+                CreateOrderResponse response = new CreateOrderResponse();
+                if (!IsOrderAlreadyExist(request.ThirdPartyOrderId))
+                {
+                    // Insert into DynamicPosOrder Table
+                    InsertDynamicPOSOrder(request);
+                    // Get store URL 
+                    StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
+                    string apiResult = await SendOrderToExternalApiV2(request, getStoreinfo);
+                    var deserializedResult = JsonConvert.DeserializeObject<dynamic>(apiResult);
 
-                //if (deserializedResult?.status == "ok")
-                //{
-                //    response.Message = "Order Created Successfully";
-                //    response.HttpStatusCode = 200;
-                //}
-                //else
-                //{
-                //    response.Message = "Failed to create order By DT";
-                //}
-                response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                    if (deserializedResult?.status == "ok")
+                    {
+                        response.Message = "Order Created Successfully";
+                        response.HttpStatusCode = 200;
+                    }
+                    else
+                    {
+                        DeleteCurrentRecord(request.ThirdPartyOrderId);
+                        response.Message = "Failed to create order By DT";
+                    }
+                    response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                    return response;
+                }
+                else
+                {
+                    response.Message = "Order Already Exist";
+                }
                 return response;
             }
-            else
+            catch (Exception ex)
             {
-                response.Message = "Order Already Exist";
+                DeleteCurrentRecord(request.ThirdPartyOrderId);
+                throw ex;
             }
-                return response;
+
         }
 
         public async Task<CreateOrderResponse> UpdateOrder(UpdateOrderModel request, string ThirdPartyOrderId)
@@ -243,7 +258,7 @@ namespace Middleware_Indolge.Services
         public async Task<string> SendOrderToExternalApiV2(CreateOrderModel request, StoreInfo storeinfo)
         {
             // Safely combine base URL and endpoint
-            string apiUrl = $"{storeinfo.DTCreateUrl.TrimEnd('/')}/api/OrderKDS/createOrderForDragonTail";
+            string apiUrl = $"{storeinfo.RSSUUrl.TrimEnd('/')}/api/OrderKDS/createOrderForDragonTail";
             return await ApiHelper.PostAsync(apiUrl, request);
         }
         public async Task<string> SendSaleOrderToExternalApi(CreateOrderModel request)
@@ -264,14 +279,13 @@ namespace Middleware_Indolge.Services
 
         public async Task<string> SendCancelKDSOrderToExternalApi(string ThirdPartyOrderId)
         {
-
             string apiUrl = "http://localhost:1638/api/OrderKDS/cancelKDSOrder/?OrderId=" + ThirdPartyOrderId;
             return await ApiHelper.DeleteAsync(apiUrl);
         }
         public async Task<string> SendCancelKDSOrderToExternalApiV2(string ThirdPartyOrderId, StoreInfo storeinfo)
         {
             // Safely combine base URL and endpoint
-            string apiUrl = $"{storeinfo.DTCreateUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail";
+            string apiUrl = $"{storeinfo.RSSUUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail";
             return await ApiHelper.PutAsync(apiUrl, ThirdPartyOrderId);
         }
 
@@ -344,6 +358,17 @@ namespace Middleware_Indolge.Services
 
         public async Task<StoreInfo?> GetStoreInfoFromDynamicsAsync(string defaultCustAccount)
         {
+
+            string url = StoreUrlCache.GetStoreUrl(defaultCustAccount);
+
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                StoreInfo testResult = new StoreInfo
+                {
+                    RSSUUrl = url
+                };
+                return testResult;
+            }
             string? token = await GetAccessTokenAsync();
             if (token == null) return null;
 
@@ -359,12 +384,34 @@ namespace Middleware_Indolge.Services
             var responseContent = await response.Content.ReadAsStringAsync();
 
             var result = JsonConvert.DeserializeObject<StoreInfoWrapper>(responseContent);
+            StoreUrlCache.SetStoreUrl(defaultCustAccount, result?.Value?.FirstOrDefault()?.RSSUUrl ?? string.Empty);
 
+
+            // After: Check if DTCreateUrl is null or empty, then set to your default data
+            var RSSUUrl = result?.Value?.FirstOrDefault()?.RSSUUrl;
+
+            if (string.IsNullOrEmpty(RSSUUrl))
+            {
+                RSSUUrl = "your_default_data_here"; // Replace with your actual default value
+            }
+            StoreUrlCache.SetStoreUrl(defaultCustAccount, RSSUUrl);
             return result?.Value?.FirstOrDefault(); // Return the first matched store info
         }
 
+        private bool DeleteCurrentRecord(string thirdPartyOrderId)
+        {
+            bool result = false;
+            string deleteFrom_DynamicPOSOrders = "Delete from DynamicPOSOrders where ThirdPartyOrderId='" + thirdPartyOrderId + "'";
+            int IsdeleteFrom_DynamicPOSOrders = 0;
+            IsdeleteFrom_DynamicPOSOrders = SqlHelper.ExecuteNonQuery(_connectionString, deleteFrom_DynamicPOSOrders.ToString(), CommandType.Text, null);
+            if (IsdeleteFrom_DynamicPOSOrders > 0)
+            {
+                result = true;
+            }
+            return result;
 
-
+        }
 
     }
+
 }
