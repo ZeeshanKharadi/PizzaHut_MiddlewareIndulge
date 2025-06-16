@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Middleware_Indolge.Middleware;
-
+using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register services
@@ -17,7 +17,14 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
-
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.File(
+        path: "Logs/log-.txt",
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        rollingInterval: RollingInterval.Day
+    )
+    .CreateLogger();
+builder.Host.UseSerilog();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -49,5 +56,6 @@ app.UseMiddleware<ApiLoggingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
 
 app.Run();

@@ -26,10 +26,13 @@ namespace Middleware_Indolge.Controllers
         [Route("Login")]
         public async Task<LoginResponse> Login(LoginModel request)
         {
+
             LoginResponse response = new LoginResponse();
 
             try
             {
+                _logger.LogInformation("call authentication");
+
                 return await _authenticationService.Login(request);
             }
             catch (Exception ex)
@@ -38,6 +41,8 @@ namespace Middleware_Indolge.Controllers
                 response.httpStatusCode = 0;
                 response.messageType = 0;
                 response.message = "server error msg: " + ex.Message + " | Inner exception:  " + ex.InnerException;
+                _logger.LogInformation("Resonse   {method}", System.Text.Json.JsonSerializer.Serialize(response));
+
                 return response;
             }
         }

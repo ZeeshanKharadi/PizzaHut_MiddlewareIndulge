@@ -7,7 +7,6 @@ using Middleware_Indolge.Helper;
 using Middleware_Indolge.Models;
 using Middleware_Indolge.Services.Interfaces;
 using Newtonsoft.Json;
-
 using POS_Integration_CommonCore.Helpers;
 using System.Data;
 using System.Net;
@@ -51,8 +50,9 @@ namespace Middleware_Indolge.Services
         private string _dynamicsLoginClientid;
         private string _dynamicsLoginClientsecret;
         private string _dynamicsLoginUrl;
+        private readonly ILogger<CreateOrderPOSService> _logger;
 
-        public CreateOrderPOSService(IConfiguration configuration)
+        public CreateOrderPOSService(IConfiguration configuration, ILogger<CreateOrderPOSService> logger)
         {
             _configuration = configuration;
             _connectionString = configuration.GetConnectionString("AppDbConnection");
@@ -66,6 +66,7 @@ namespace Middleware_Indolge.Services
             _dynamicsLoginClientid = _configuration.GetSection("AppInformation:LoginClientId").Value;
             _dynamicsLoginClientsecret = _configuration.GetSection("AppInformation:LoginClientSecret").Value;
             _dynamicsLoginUrl = _configuration.GetSection("AppInformation:LoginUrl").Value;
+            _logger = logger;
         }
 
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
@@ -79,7 +80,11 @@ namespace Middleware_Indolge.Services
                     InsertDynamicPOSOrder(request);
                     // Get store URL 
                     StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
+                    _logger.LogInformation("Call SendOrderToExternalApiV2");
+                    _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
                     string apiResult = await SendOrderToExternalApiV2(request, getStoreinfo);
+                    _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
+
                     var deserializedResult = JsonConvert.DeserializeObject<dynamic>(apiResult);
 
                     if (deserializedResult?.status == "ok")
@@ -103,6 +108,7 @@ namespace Middleware_Indolge.Services
             }
             catch (Exception ex)
             {
+
                 DeleteCurrentRecord(request.ThirdPartyOrderId);
                 throw ex;
             }
@@ -124,7 +130,11 @@ namespace Middleware_Indolge.Services
                     {
                         var requestObject = JsonConvert.DeserializeObject<CreateOrderModel>(json);
                         StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(requestObject.Store);
+                        _logger.LogInformation("Call SendCancelKDSOrderToExternalApiV2");
+                        _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
                         string apiResult = await SendCancelKDSOrderToExternalApiV2(ThirdPartyOrderId, getStoreinfo);
+                        _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
+
                         response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                         UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
                     }
@@ -144,7 +154,11 @@ namespace Middleware_Indolge.Services
                         var storedOrder = JsonConvert.DeserializeObject<CreateOrderModel>(json);
                         // Assign ExtItemId to ItemId for each sales line
                         storedOrder.SalesLines.ForEach(line => line.ItemId = line.ExtItemId);
+                        _logger.LogInformation("Call SendSaleOrderToExternalApi");
+                        _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
                         string apiResult = await SendSaleOrderToExternalApi(storedOrder);
+                        _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
+
                         response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                         UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
                     }
@@ -166,7 +180,11 @@ namespace Middleware_Indolge.Services
                         storedOrder.SalesLines.ForEach(line => line.ItemId = line.ExtItemId);
                         // mapping update Order Tender Type
                         storedOrder.TenderTypeId = request.TenderTypeId;
+                        _logger.LogInformation("Call SendReturnOrderToExternalApi");
+                        _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
                         string apiResult = await SendReturnOrderToExternalApi(storedOrder);
+                        _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
+
                         response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                         UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
                     }
@@ -377,8 +395,11 @@ namespace Middleware_Indolge.Services
 
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+            _logger.LogInformation("Call {api}", finalUrl);
+            _logger.LogInformation("Request   " );
             var response = await client.GetAsync(finalUrl);
+            _logger.LogInformation("Response  {response}", System.Text.Json.JsonSerializer.Serialize(response));
+
             if (!response.IsSuccessStatusCode) return null;
 
             var responseContent = await response.Content.ReadAsStringAsync();
