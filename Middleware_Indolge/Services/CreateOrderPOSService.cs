@@ -216,6 +216,8 @@ namespace Middleware_Indolge.Services
         }
         public void InsertDynamicPOSOrder(CreateOrderModel order)
         {
+            _logger.LogInformation("Call InsertDynamicPOSOrder");
+
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
@@ -310,6 +312,8 @@ namespace Middleware_Indolge.Services
 
         public bool IsOrderAlreadyExist(string thirdPartyOrderId)
         {
+            _logger.LogInformation("Call IsOrderAlreadyExist");
+
             string query = "SELECT COUNT(*) FROM dbo.DynamicPOSOrders WHERE thirdPartyOrderId = @thirdPartyOrderId";
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -357,12 +361,12 @@ namespace Middleware_Indolge.Services
             using var client = new HttpClient();
 
             var values = new Dictionary<string, string>
-    {
-        { "grant_type", _dynamicsLoginGrantType},
-        { "client_id", _dynamicsLoginClientid },
-        { "client_secret", _dynamicsLoginClientsecret },
-        { "resource", _dynamicsLoginResource }
-    };
+        {
+            { "grant_type", _dynamicsLoginGrantType},
+            { "client_id", _dynamicsLoginClientid },
+            { "client_secret", _dynamicsLoginClientsecret },
+            { "resource", _dynamicsLoginResource }
+        };
 
             var content = new FormUrlEncodedContent(values);
 
@@ -376,6 +380,7 @@ namespace Middleware_Indolge.Services
 
         public async Task<StoreInfo?> GetStoreInfoFromDynamicsAsync(string defaultCustAccount)
         {
+            _logger.LogInformation("Call GetStoreInfoFromDynamicsAsync");
 
             string url = StoreUrlCache.GetStoreUrl(defaultCustAccount);
 
@@ -396,7 +401,7 @@ namespace Middleware_Indolge.Services
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             _logger.LogInformation("Call {api}", finalUrl);
-            _logger.LogInformation("Request   " );
+            _logger.LogInformation("Request   ");
             var response = await client.GetAsync(finalUrl);
             _logger.LogInformation("Response  {response}", System.Text.Json.JsonSerializer.Serialize(response));
 
