@@ -418,7 +418,7 @@ namespace Middleware_Indolge.Services
 
             if (string.IsNullOrEmpty(RSSUUrl))
             {
-                RSSUUrl = ""; // Replace with your actual default value
+                RSSUUrl = "https://php-dt.rustamfoodspk.com:447"; // Replace with your actual default value
             }
             StoreUrlCache.SetStoreUrl(defaultCustAccount, RSSUUrl);
             return result?.Value?.FirstOrDefault(); // Return the first matched store info
