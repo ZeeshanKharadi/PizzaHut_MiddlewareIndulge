@@ -413,7 +413,7 @@ namespace Middleware_Indolge.Services
 
             if (string.IsNullOrEmpty(RSSUUrl))
             {
-                RSSUUrl = "your_default_data_here"; // Replace with your actual default value
+                RSSUUrl = ""; // Replace with your actual default value
             }
             StoreUrlCache.SetStoreUrl(defaultCustAccount, RSSUUrl);
             return result?.Value?.FirstOrDefault(); // Return the first matched store info
@@ -421,6 +421,7 @@ namespace Middleware_Indolge.Services
 
         private bool DeleteCurrentRecord(string thirdPartyOrderId)
         {
+            _logger.LogInformation("DeleteCurrentRecord called with ThirdPartyOrderId: {ThirdPartyOrderId}", thirdPartyOrderId);
             bool result = false;
             string deleteFrom_DynamicPOSOrders = "Delete from DynamicPOSOrders where ThirdPartyOrderId='" + thirdPartyOrderId + "'";
             int IsdeleteFrom_DynamicPOSOrders = 0;
