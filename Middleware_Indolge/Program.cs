@@ -30,7 +30,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Indolge Integration With KDS",
+        Title = "Maison Middleware - Integration With Simplex",
         Version = "v1"
     });
 });
@@ -76,7 +76,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Indolge API V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Middleware API V1");
     });
 }
 app.UseMiddleware<TokenValidationMiddleware>();
