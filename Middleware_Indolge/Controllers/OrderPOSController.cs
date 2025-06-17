@@ -46,7 +46,7 @@ namespace Middleware_Indolge.Controllers
                 //response.MessageType = (int)MessageType.Error;
                 response.MessageType = 0;
                 response.Message = "server error msg: " + ex.Message + " | Inner exception:  " + ex.InnerException;
-                _logger.LogInformation("Exception   {method}", System.Text.Json.JsonSerializer.Serialize(ex.InnerException));
+                _logger.LogError(ex, "An error occurred while updating the order.");
 
                 return response;
             }
@@ -73,7 +73,8 @@ namespace Middleware_Indolge.Controllers
                 response.HttpStatusCode = 0; // Consider using actual status codes
                 response.MessageType = 0;
                 response.Message = $"server error msg: {ex.Message} | Inner exception: {ex.InnerException}";
-                _logger.LogInformation("Exception   {method}", System.Text.Json.JsonSerializer.Serialize(response));
+                _logger.LogError(ex, "An error occurred while updating the order.");
+               
 
                 return response;
             }
