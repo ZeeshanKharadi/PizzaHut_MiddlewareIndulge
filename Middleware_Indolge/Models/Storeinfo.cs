@@ -33,6 +33,8 @@ namespace Middleware_Indolge.Models
 
         [JsonProperty("DTCreateUrl")]
         public string DTCreateUrl { get; set; }
+        [JsonProperty("RSSUUrl")]
+        public string RSSUUrl { get; set; }
     }
 
 }

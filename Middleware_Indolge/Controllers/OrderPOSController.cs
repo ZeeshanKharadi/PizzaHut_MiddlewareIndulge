@@ -27,11 +27,16 @@ namespace Middleware_Indolge.Controllers
         [Route("createOrder")]
         public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
         {
+            _logger.LogInformation("Call CreateOrder");
+            _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
             CreateOrderResponse response = new CreateOrderResponse();
 
             try
             {
-                return await _createOrderPOSService.CreateOrder(request);
+                response = await _createOrderPOSService.CreateOrder(request);
+                _logger.LogInformation("Response CreateOrder  {method}", System.Text.Json.JsonSerializer.Serialize(response));
+
+                return response;
             }
             catch (Exception ex)
             {
@@ -41,6 +46,8 @@ namespace Middleware_Indolge.Controllers
                 //response.MessageType = (int)MessageType.Error;
                 response.MessageType = 0;
                 response.Message = "server error msg: " + ex.Message + " | Inner exception:  " + ex.InnerException;
+                _logger.LogError(ex, "An error occurred while updating the order.");
+
                 return response;
             }
         }
@@ -49,12 +56,16 @@ namespace Middleware_Indolge.Controllers
         [Route("updateOrder")]
         public async Task<CreateOrderResponse> UpdateOrder(string thirdPartyOrderId, [FromBody] UpdateOrderModel request)
         {
+            _logger.LogInformation("Call UpdateOrder");
+            _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
             CreateOrderResponse response = new CreateOrderResponse();
 
             try
             {
+                response = await _createOrderPOSService.UpdateOrder(request, thirdPartyOrderId);
+                _logger.LogInformation("Response UpdateOrder  {method}", System.Text.Json.JsonSerializer.Serialize(response));
 
-                return await _createOrderPOSService.UpdateOrder(request, thirdPartyOrderId);
+                return response;
             }
             catch (Exception ex)
             {
@@ -62,6 +73,9 @@ namespace Middleware_Indolge.Controllers
                 response.HttpStatusCode = 0; // Consider using actual status codes
                 response.MessageType = 0;
                 response.Message = $"server error msg: {ex.Message} | Inner exception: {ex.InnerException}";
+                _logger.LogError(ex, "An error occurred while updating the order.");
+               
+
                 return response;
             }
         }
