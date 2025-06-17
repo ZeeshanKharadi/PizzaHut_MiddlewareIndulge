@@ -84,7 +84,8 @@ CREATE TABLE LoginAttempts (
     FailureReason NVARCHAR(255) NULL
 );
 
-CREATE TABLE ApiLogs (
+
+CREATE TABLE ExternalApiLogs (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     RequestMethod NVARCHAR(10),
     RequestPath NVARCHAR(500),
