@@ -5,9 +5,7 @@ ADD CONSTRAINT FK_Tokens_Users_UserId
 FOREIGN KEY (UserId) REFERENCES Users(UserId);
 
 
--- RetailChannelDatabase
-alter table ax.retailinventtable
-add POSCode nvarchar(30), Channel nvarchar(30)
+
 
 -- For schema
 USE [Middlewaredb]

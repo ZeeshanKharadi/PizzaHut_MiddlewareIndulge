@@ -1,0 +1,961 @@
+DROP PROCEDURE IF EXISTS [dbo].[InsertMiddlewareRetailTransaction];
+DROP PROCEDURE IF EXISTS [dbo].[InsertRetailTransactionSalesTrans];
+DROP PROCEDURE IF EXISTS [dbo].[usp_getTaxGroupAndBusinessDate];
+DROP PROCEDURE IF EXISTS [dbo].[usp_create_axRetailTransactionTable];
+DROP PROCEDURE IF EXISTS [dbo].[usp_CreateretailTransSalesTransLines];
+DROP PROCEDURE IF EXISTS [dbo].[sp_getProductDetails];
+DROP PROCEDURE IF EXISTS [dbo].[sp_getProductDetailsCustom];
+DROP PROCEDURE IF EXISTS [dbo].[usp_create_MZNFBRINVOICING];
+DROP PROCEDURE IF EXISTS [dbo].[usp_GetOrderDetail];
+DROP PROCEDURE IF EXISTS [dbo].[usp_insert_RETAILTRANSACTIONMARKUPTRANS];
+DROP PROCEDURE IF EXISTS [dbo].[usp_insert_RETAILTRANSACTIONTAXTRANS];
+DROP PROCEDURE IF EXISTS [dbo].[usp_SimplexRequestLog];
+DROP PROCEDURE IF EXISTS [dbo].[MZNFBRTRANSACTION];
+DROP PROCEDURE IF EXISTS [dbo].[usp_CreateRetailTransactionDiscTrans];
+DROP PROCEDURE IF EXISTS [dbo].[sp_getProductDetailsfalse];
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  StoredProcedure [dbo].[InsertMiddlewareRetailTransaction]    Script Date: 2/14/2025 5:29:34 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE PROCEDURE [dbo].[InsertMiddlewareRetailTransaction]
+    @DataAreaId NVARCHAR(50),
+    @Currency NVARCHAR(50),
+    @GrossAmount DECIMAL(18, 2),
+    @NetAmount DECIMAL(18, 2),
+    @NetPrice DECIMAL(18, 2),
+    @TransDate DATETIME,
+    @PaymentMode INT,
+    @Store NVARCHAR(50),
+    @TenderTypeId NVARCHAR(50),
+    @AmountCur DECIMAL(18, 2),
+    @ThirdPartyOrderId NVARCHAR(50),
+    @DiscAmount DECIMAL(18, 2),
+    @DiscAmountWithoutTax DECIMAL(18, 2),
+    @Floor NVARCHAR(50),
+    @Table NVARCHAR(50),
+    @Server NVARCHAR(50),
+    @Person NVARCHAR(50),
+    @Comment NVARCHAR(MAX),
+    @Json NVARCHAR(MAX),
+	@isFinalize BIT,
+	@isDeleted BIT,
+	@isPaid BIT,
+	@isOrderLock BIT,
+	@TaxGroup NVARCHAR(50),
+	@isFinalizeUpdate BIT,
+	@DiscountOfferId NVARCHAR(100),
+	@CreatedOn DateTime,
+    @TransactionId NVARCHAR(50)  -- Transaction ID to check for existing records
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Check if a record with the given TransactionId exists
+        IF EXISTS (SELECT 1 FROM RetailTransaction WHERE TransactionId = @TransactionId)
+        BEGIN
+            -- Update the existing record
+            UPDATE RetailTransaction
+            SET
+                DataAreaId = @DataAreaId,
+                Currency = @Currency,
+                GrossAmount = @GrossAmount,
+                NetAmount = @NetAmount,
+                NetPrice = @NetPrice,
+                TransDate = @TransDate,
+                PaymentMode = @PaymentMode,
+                Store = @Store,
+                TenderTypeId = @TenderTypeId,
+                AmountCur = @AmountCur,
+                ThirdPartyOrderId = @ThirdPartyOrderId,
+                DiscAmount = @DiscAmount,
+                DiscAmountWithoutTax = @DiscAmountWithoutTax,
+                Floor = @Floor,
+                [Table] = @Table,
+                [Server] = @Server,
+                Person = @Person,
+                [Comment] = @Comment,
+                Json = @Json
+            WHERE TransactionId = @TransactionId;
+        END
+        ELSE
+        BEGIN
+            -- Insert a new record
+            INSERT INTO RetailTransaction
+            (
+                DataAreaId,
+                Currency,
+                GrossAmount,
+                NetAmount,
+                NetPrice,
+                TransDate,
+                PaymentMode,
+                Store,
+                TenderTypeId,
+                AmountCur,
+                ThirdPartyOrderId,
+                DiscAmount,
+                DiscAmountWithoutTax,
+                Floor,
+                [Table],
+                [Server],
+                Person,
+                [Comment],
+                Json,
+				isFinalize,
+				IsDeleted,
+				isPaid,
+				isOrderLock,
+				TaxGroup,
+				isFinalizeUpdate,
+				DiscountOfferId,
+                TransactionId,
+				LastTransactionId,
+				CreatedOn
+            )
+            VALUES
+            (
+                @DataAreaId,
+                @Currency,
+                @GrossAmount,
+                @NetAmount,
+                @NetPrice,
+                @TransDate,
+                @PaymentMode,
+                @Store,
+                @TenderTypeId,
+                @AmountCur,
+                @ThirdPartyOrderId,
+                @DiscAmount,
+                @DiscAmountWithoutTax,
+                @Floor,
+                @Table,
+                @Server,
+                @Person,
+                @Comment,
+                @Json,
+				@isFinalize,
+				@isDeleted,
+				@isPaid,
+				@isOrderLock,
+				@TaxGroup,
+				@isFinalizeUpdate,
+				@DiscountOfferId,
+                @TransactionId,
+				@TransactionId,
+				@CreatedOn
+            );
+        END;
+
+        -- Return the TransactionId as output
+        SELECT @TransactionId AS GeneratedTransactionId;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        -- Handle errors and rollback transaction
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        -- Re-throw the error to notify the caller
+        THROW;
+    END CATCH
+END;
+
+GO
+
+
+CREATE PROCEDURE [dbo].[InsertRetailTransactionSalesTrans]
+    @TransactionId NVARCHAR(50),
+    @ItemId NVARCHAR(50),
+    @ItemName NVARCHAR(100),
+    @LineNum DECIMAL(18, 2),
+    @Quantity DECIMAL(18, 2),
+    @TaxAmount DECIMAL(18, 2),
+    @NetAmount DECIMAL(18, 2),
+    @NetAmountInclTax DECIMAL(18, 2),
+    @TransdDate DATETIME,
+    @Store NVARCHAR(50),
+    @Price DECIMAL(18, 2),
+    @NetPrice DECIMAL(18, 2),
+    @LineComment NVARCHAR(500),
+    @DiscAmount DECIMAL(18, 2),
+    @DiscAmountWithOutTax DECIMAL(18, 2),
+	@LastTransactionId NVARCHAR(50) = null
+AS
+BEGIN
+    INSERT INTO RetailTransactionSalesTrans
+    (
+        TransactionId, ItemId, ItemName, Linenum, Quantity, 
+        TaxAmount, NetAmount, NetAmountInclTax, TransdDate, 
+        Store, Price, NetPrice, LineComment, DiscAmount, DiscAmountWithoutTax, LastTransactionId
+    )
+    VALUES
+    (
+        @TransactionId, @ItemId, @ItemName, @LineNum, @Quantity, 
+        @TaxAmount, @NetAmount, @NetAmountInclTax, @TransdDate, 
+        @Store, @Price, @NetPrice, @LineComment, @DiscAmount, @DiscAmountWithoutTax, @LastTransactionId
+    )
+END
+
+GO
+
+
+
+
+CREATE PROCEDURE [dbo].[usp_getTaxGroupAndBusinessDate]
+@storeId NVARCHAR(60),
+@payment_method INT,
+@taxcode NVARCHAR(60)
+AS
+BEGIN
+
+    IF @payment_method = 0
+    BEGIN
+        DECLARE @tempTaxCode NVARCHAR(100);
+
+        -- Assign the value from the query to the variable @tempTaxCode
+        SELECT @tempTaxCode = tax.TAXCODE
+        FROM ax.TAXDATA tax
+        JOIN ax.RETAILSTORETABLE Store ON Store.TAXGROUP = tax.TAXCODE
+        WHERE Store.STORENUMBER = @storeId;
+
+        -- Check if @taxcode is equal to @tempTaxCode
+        IF @taxcode = @tempTaxCode
+        BEGIN
+            -- If tax codes are the same, return the required data
+            SELECT '' AS SOURCETAXGROUP, '' AS RBOSALESTAXOVERRIDECODE,
+                   tax.TAXCODE, '' AS TAXOVERRIDEGROUP, tax.TAXVALUE, 
+                   Store.TAXGROUP, Store.stmtCalcBatchEndTime
+            FROM ax.TAXDATA tax
+            JOIN ax.RETAILSTORETABLE Store ON Store.TAXGROUP = tax.TAXCODE
+            WHERE Store.STORENUMBER = @storeId;
+        END
+        ELSE
+        BEGIN
+
+		SELECT '' AS SOURCETAXGROUP, '' AS RBOSALESTAXOVERRIDECODE,
+                   tax.TAXCODE, '' AS TAXOVERRIDEGROUP, tax.TAXVALUE, 
+                   tax.TAXCODE As TAXGROUP, Store.stmtCalcBatchEndTime
+            FROM ax.TAXDATA tax
+            JOIN ax.RETAILSTORETABLE Store ON Store.TAXOVERRIDEGROUP = tax.RECID
+            WHERE Store.STORENUMBER = @storeId;
+            -- If tax codes are different, return data with the different logic
+           
+        END
+    END
+    ELSE IF @payment_method = 1
+    BEGIN
+        -- For payment method 1, return the tax information
+         SELECT '' AS SOURCETAXGROUP, '' AS RBOSALESTAXOVERRIDECODE,
+                   tax.TAXCODE, '' AS TAXOVERRIDEGROUP, tax.TAXVALUE, 
+                   Storegroup.SOURCETAXGROUP As TAXGROUP, Store.stmtCalcBatchEndTime, tax.*
+            FROM ax.TAXDATA tax
+            JOIN ax.RETAILSALESTAXOVERRIDE Storegroup ON Storegroup.RECID = tax.RECID
+			JOIN ax.RETAILSTORETABLE Store  ON Store.TAXOVERRIDEGROUP = tax.RECID
+            WHERE Store.STORENUMBER = @storeId;
+    END
+
+END
+
+-- To execute the stored procedure: 
+-- exec usp_getTaxGroupAndBusinessDate '0072', 1, 'TAXCODE123'
+GO
+
+
+
+CREATE Procedure [dbo].[usp_create_axRetailTransactionTable]
+
+@Terminal				nvarchar(250) = Null,
+@BATCHID				bigint = NULL,
+@CHANNEL				bigint = NULL,
+@CURRENCY				nvarchar(100) = NULL,
+@GROSSAMOUNT			decimal(18,2) = NULL,
+@PaymentAmount			decimal = NULL,
+@INVENTLOCATIONID		nvarchar(250) = NULL,
+@NETAMOUNT				decimal(18,2) = NULL,
+@NETPRICE				decimal(18,2) = NULL,
+@NUMBEROFITEMLINES		numeric = NULL,
+@NUMBEROFITEMS			numeric = NULL,
+@NUMBEROFPAYMENTLINES	int = NULL,
+@RECEIPTID				nvarchar(250) = NULL,
+@STAFF					nvarchar(250) = NULL,
+@STORE					nvarchar(250) = NULL,
+@TRANSACTIONID			nvarchar(250) = NULL,
+@HDSOrderID				nvarchar(250) = NULL,
+@TRANSDATE				date = NULL,
+@TRANSTIME				int = NULL,
+@TYPE					int = NULL,
+@EXCHRATE				numeric = NULL,
+@DATAAREAID				nvarchar(120) = NULL,
+@DESCRIPTION			nvarchar (250) = NULL,
+@BATCHTERMINALID		nvarchar (250) = NULL,
+@BusinessDate			date = NULL,
+@CREATEDONPOSTERMINAL	nvarchar(100) = NULL,
+@TIMEWHENTOTALPRESSED	int = NULL,
+@TIMEWHENTRANSCLOSED	int = NULL,
+@RECEIPTDATEREQUESTED	DateTime2 = NULL,
+@SUSPENDEDTRANSACTIONID	nvarchar(250) = NULL,
+@Payment_method			nvarchar(250) = NULL,
+@ThirdPartyOrderId		nvarchar (250) = NULL,
+@PickUpMode				nvarchar(250) = NULL,
+@TableNum				nvarchar(6) = NULL,
+@Comment				nvarchar(250) = NULL,
+@CreatedDateTime		datetime = Null,
+@DISCAMOUNT	decimal(18,2) = NULL,
+@DISCAMOUNTWITHOUTTAX	decimal(18,2) = NULL,
+@Source				nvarchar(250) = NULL,
+@ISTAXEXEMPTEDFORPRICEINCLUSIVE			int = NULL
+
+
+AS
+BEGIN
+    -- Check if a record already exists with the same ThirdPartyOrderId and Type = 2
+    IF EXISTS (
+        SELECT 1 FROM ax.RETAILTRANSACTIONTABLE 
+        WHERE ThirdPartyOrderId = @ThirdPartyOrderId 
+        AND TYPE = 2
+    )
+    BEGIN
+        PRINT 'Record already exists. Skipping insertion.';
+        RETURN;
+    END
+
+    -- Insert the record if no existing row is found
+    INSERT INTO ax.RETAILTRANSACTIONTABLE
+    (
+        TERMINAL, BATCHID, CHANNEL, CURRENCY, GROSSAMOUNT, INVENTLOCATIONID, NETAMOUNT, NETPRICE, NUMBEROFITEMLINES, NUMBEROFITEMS, 
+        NUMBEROFPAYMENTLINES, RECEIPTID, SUSPENDEDTRANSACTIONID, STAFF, STORE, TRANSACTIONID, TRANSDATE, 
+        TRANSTIME, [TYPE], DATAAREAID, [DESCRIPTION], EXCHRATE, 
+        PaymentAmount, BATCHTERMINALID, BusinessDate, CREATEDONPOSTERMINAL, TIMEWHENTOTALPRESSED, TIMEWHENTRANSCLOSED, RECEIPTDATEREQUESTED, 
+        HDSOrderID, Payment_method, ThirdPartyOrderId, PickUpMode, TableNum, COMMENT, CREATEDDATETIME, Source, DISCAMOUNT, DISCAMOUNTWITHOUTTAX, ISTAXEXEMPTEDFORPRICEINCLUSIVE    
+    ) 
+    VALUES 
+    (
+        @TERMINAL, @BATCHID, @CHANNEL, @CURRENCY, @GROSSAMOUNT, @INVENTLOCATIONID,  @NETAMOUNT, @NETPRICE, @NUMBEROFITEMLINES, @NUMBEROFITEMS,
+        @NUMBEROFPAYMENTLINES, @RECEIPTID, @SUSPENDEDTRANSACTIONID, @STAFF, @STORE, @TRANSACTIONID, @TRANSDATE,
+        @TRANSTIME, @TYPE, @DATAAREAID, @DESCRIPTION, @EXCHRATE,
+        @PaymentAmount, @BATCHTERMINALID, @BusinessDate, @CREATEDONPOSTERMINAL, @TIMEWHENTOTALPRESSED, @TIMEWHENTRANSCLOSED, @RECEIPTDATEREQUESTED,
+        @HDSOrderID, @Payment_method, @ThirdPartyOrderId, @PickUpMode, @TableNum, ' ', @CreatedDateTime, @Source, @DISCAMOUNT, @DISCAMOUNTWITHOUTTAX, @ISTAXEXEMPTEDFORPRICEINCLUSIVE    
+    )
+END
+
+GO
+
+
+
+CREATE Procedure [dbo].[usp_CreateretailTransSalesTransLines]
+
+@TERMINALID nvarchar(120) = null,
+@CHANNEL bigint = null,
+@RECEIPTID nvarchar(120) = null,
+@STORE nvarchar(120) = null,
+@TRANSACTIONID nvarchar(120) = null,
+@ITEMID nvarchar(120) = null,
+@LINENUM numeric = null,
+@QTY numeric = null,
+@PRICE numeric(32, 16) = null ,
+@NETAMOUNT numeric(32, 16) = Null,
+@NETAMOUNTINCLTAX numeric(32, 16) = Null,
+@NETPRICE numeric(32, 16) = Null,
+@ORIGINALTAXGROUP nvarchar(120) = Null,
+@ORIGINALTAXITEMGROUP nvarchar(120) = Null,
+@TaxGroup nvarchar(120) = Null,
+@TAXITEMGROUP nvarchar(120) = Null,
+@InventlocationID nvarchar(120) = Null,
+@OriginalPrice numeric(32, 16) = null,
+@StaffID nvarchar(25) = NULL,
+@TRANSDATE date = Null,
+@TRANSTIME int = NULL,
+@DATAAREAID nvarchar(25) = NULL,
+@Currency nvarchar(25) = NULL,
+@BusinessDate date = NULL,
+@TaxAmount numeric(32, 16) = NUll,
+@TAXRATEPERCENT numeric(32, 16) = NUll,
+@TAXEXEMPTPRICEINCLUSIVEORIGINALPRICE numeric(32, 16) = Null,
+@SHIPPINGDATEREQUESTED date = Null,
+@Unit nvarchar(120) = NULL,
+@VARIANTID nvarchar(120) = Null,
+@RECEIPTDATEREQUESTED date = Null,
+@CreatedDateTime		datetime = Null,
+@DISCAMOUNT  numeric(32, 16) = NULL,
+@DISCAMOUNTWITHOUTTAX  numeric(32, 16) = NULL,
+@Comment nvarchar(120) = Null
+
+AS
+
+ BEGIN
+   INSERT INTO ax.RETAILTRANSACTIONSALESTRANS
+    (
+     TERMINALID,CHANNEL,RECEIPTID,STORE,TRANSACTIONID,ITEMID,LINENUM,QTY,
+     PRICE,NETAMOUNT,NETAMOUNTINCLTAX,NETPRICE,ORIGINALTAXGROUP,ORIGINALTAXITEMGROUP,TaxGroup,TAXITEMGROUP,
+     InventlocationID,OriginalPrice,StaffID,TRANSDATE,TRANSTIME,DATAAREAID,Currency,BusinessDate,TaxAmount,
+     TAXRATEPERCENT,TAXEXEMPTPRICEINCLUSIVEORIGINALPRICE,SHIPPINGDATEREQUESTED,Unit,VARIANTID,RECEIPTDATEREQUESTED,
+	 CREATEDDATETIME, DISCAMOUNT, DISCAMOUNTWITHOUTTAX, COMMENT
+    )
+                         
+						 
+   VALUES 
+    (
+     @TERMINALID,@CHANNEL,@RECEIPTID,@STORE,@TRANSACTIONID,@ITEMID,@LINENUM,@QTY,
+     @PRICE,@NETAMOUNT,@NETAMOUNTINCLTAX,@NETPRICE,@ORIGINALTAXGROUP,@ORIGINALTAXITEMGROUP,@TaxGroup,@TAXITEMGROUP,
+     @InventlocationID,@OriginalPrice,@StaffID,@TRANSDATE,
+	 --CONVERT(INT, REPLACE(CONVERT(VARCHAR(8), GETDATE(), 108), ':', '')), 
+	 @TRANSTIME,
+	 @DATAAREAID,@Currency,@BusinessDate,@TaxAmount,
+     @TAXRATEPERCENT,@TAXEXEMPTPRICEINCLUSIVEORIGINALPRICE,@SHIPPINGDATEREQUESTED,@Unit,@VARIANTID,@RECEIPTDATEREQUESTED,
+	 @CreatedDateTime, @DISCAMOUNT, @DISCAMOUNTWITHOUTTAX, @Comment
+    )
+ 
+ END
+GO
+
+
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_getProductDetails]    Script Date: 12/24/2024 11:40:32 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+Create proc [dbo].[sp_getProductDetails]
+@TransactionID varchar(36)
+as
+ 
+select top 1 lag(e.CREATEDDATETIME) over(order by e.CREATEDDATETIME) as TIMEWHENTRANSCLOSED  ,e.TRANSACTIONID , e.CREATEDDATETIME ,e.SUSPENDEDTRANSACTIONID ,e.BUSINESSDATE
+into #tempTable from ax.RETAILTRANSACTIONTABLE e
+where e.SUSPENDEDTRANSACTIONID =  @TransactionID order by e.CREATEDDATETIME desc
+
+select a.ITEMID,erpt.[NAME] AS Description, erpt.PRODUCT,PRODPOOLID , rtt.CREATEDDATETIME,rtt.STAFF,rtt.TRANSACTIONID,rtt.RECEIPTID , a.QTY,a.Comment , rtt.SUSPENDEDTRANSACTIONID as SUSPENDEDTRANSACTIONID
+
+ 
+FROM [crt].[SALESTRANSACTIONLATESTSUSPENDEDRECEIPTVIEW] st
+inner join [crt].[SUSPENDEDTRANSACTION] ss on ss.RECEIPTID = st.RECEIPTID 
+LEFT JOIN [ax].RETAILTRANSACTIONTABLE AS rtt ON st.TRANSACTIONID = rtt.SUSPENDEDTRANSACTIONID
+inner join ax.RETAILTRANSACTIONSALESTRANS  a on a.RECEIPTID = rtt.RECEIPTID
+INNER JOIN [ax].INVENTTABLE it WITH (NOLOCK) ON it.ITEMID = a.ITEMID AND it.DATAAREAID = a.DATAAREAID
+INNER JOIN [ax].ECORESPRODUCTTRANSLATION erpt ON erpt.PRODUCT = it.PRODUCT AND erpt.LANGUAGEID = 'en-us'
+WHERE rtt.SUSPENDEDTRANSACTIONID = @TransactionID and    rtt.ENTRYSTATUS <> 1 AND a.TRANSACTIONSTATUS <> 1 and  a.ITEMID not in 
+(select b.ITEMID from #tempTable t
+inner join ax.RETAILTRANSACTIONTABLE n  on n.CREATEDDATETIME = t.TIMEWHENTRANSCLOSED
+                                       and n.SUSPENDEDTRANSACTIONID = t.SUSPENDEDTRANSACTIONID
+inner join ax.RETAILTRANSACTIONSALESTRANS b on b.TRANSACTIONID =n.TRANSACTIONID 
+and t.CREATEDDATETIME <> b.CREATEDDATETIME and b.LINENUM = a.LINENUM   )
+drop table #tempTable
+Go
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_getProductDetailsCustom]    Script Date: 12/24/2024 11:40:43 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE proc [dbo].[sp_getProductDetailsCustom]
+@TransactionID varchar(36)
+as
+ 
+select top 1 lag(e.TransdDate) over(order by e.TransdDate) as TIMEWHENTRANSCLOSED  , e.TransdDate, e.Id, e.TransactionId as transId
+into #tempTable from dbo.RetailTransactionSalesTrans e
+where e.TransactionId =  @TransactionID order by e.id desc
+ 
+
+select rtst.ItemId, rtst.ItemName , rtst.ItemId , PRODPOOLID,  rtst.TransdDate, rt.[Server] ,rtst.TransactionId, rtst.TransactionId, rtst.Quantity, rtst.LineComment, rt.Floor, rt.isFinalize, rt.ThirdPartyOrderId, rt.[Table], rt.GrossAmount, rtst.NetAmount,rtst.TaxAmount, rtst.NetAmountInclTax
+from dbo.RetailTransactionSalesTrans rtst inner join dbo.RetailTransaction rt on
+rtst.TransactionId = rt.TransactionId 
+INNER JOIN [ax].INVENTTABLE it WITH (NOLOCK) ON it.ITEMID = rtst.ITEMID where isFinalize != '1' and isOrderLock != '1' and rt.transactionId = @TransactionID and it.DATAAREAID = 'chz' and  rtst.ItemId not in (select b.itemid from #tempTable t
+inner join dbo.RetailTransactionSalesTrans b on b.TransactionId = t.TransId and t.TransdDate <> b.TransdDate and b.LINENUM = rtst.LINENUM);
+drop table #tempTable
+GO
+
+
+
+Create Procedure [dbo].[usp_create_MZNFBRINVOICING]
+
+@STOREID nvarchar(10),
+@DATAAREAID  nvarchar(4),
+@TERMINAL  nvarchar(10),
+@TRANSACTIONID  nvarchar(44),
+@FBRINVOICENO  nvarchar(44),
+@FBRRESPONSE  nvarchar(1000),
+@RESPONSE   nvarchar(max)
+
+AS
+
+	BEGIN
+
+		INSERT INTO [ext].[MZNFBRINVOICING]
+         (
+		    [STOREID]
+           ,[DATAAREAID]
+           ,[TERMINAL]
+           ,[TRANSACTIONID]
+           ,[FBRINVOICENO]
+           ,[FBRRESPONSE]
+           ,[RESPONSE]
+		 )
+		VALUES
+		(
+			@STOREID,
+			@DATAAREAID,
+			@TERMINAL,
+			@TRANSACTIONID, 
+			@FBRINVOICENO,
+			@FBRRESPONSE, 
+			@RESPONSE
+		 )
+	END;
+GO
+
+
+
+CREATE procedure [dbo].[usp_GetOrderDetail]
+@ThirdPartyOrder nvarchar(160)
+
+AS
+
+  BEGIN
+	Select *,( select top 1 DTral.name from  ax.ECORESCONFIGURATION as conf 
+	Inner Join ax.ECORESPRODUCTMASTERCONFIGURATION as PMConf on PMConf.CONFIGURATION = conf.RECID
+	Inner Join ax.ECORESPRODUCTMASTERDIMVALUETRANSLATION as DTral on DTral.RECID = PMConf.RECID
+	where conf.NAME= Orders.ConfigID ) ConfigIDName
+	from ( select Line.TRANSACTIONID, Line.TRANSDATE, Line.TRANSACTIONSTATUS, TransTable.ENTRYSTATUS,TransTable.REPLICATIONCOUNTERFROMORIGIN,
+	RIGHT('0' + CAST(Line.TRANSTIME / 3600 AS VARCHAR),2) + ':' +RIGHT('0' + CAST((Line.TRANSTIME / 60) % 60 AS VARCHAR),2) + ':' +RIGHT('0' + CAST(Line.TRANSTIME % 60 AS VARCHAR),2) as TRANSTIME,
+	CONCAT( Line.TRANSDATE,' ',Line.TRANSTIME) as OrderDateTime,
+	TransTable.SUSPENDEDTRANSACTIONID ,TransTable.HDSOrderID,TransTable.DESCRIPTION,TransTable.TYPE as TransactionType,
+	Line.ITEMID, Line.LINENUM, Line.RECEIPTID,Line.RETURNTRANSACTIONID, 
+	Line.QTY, Line.TERMINALID, Line.STORE, 
+	Translation.DESCRIPTION as 'ITEM DESCRIPTION', Translation.NAME as 'ITEM NAME', ItemDim.CONFIGID ItemConfig,Line.COMMENT,
+	CatTrans.FRIENDLYNAME as 'CATEGORY' ,isnull((select top 1 ECORESCONFIGURATION.NAME 
+	from ax.RETAILKIT
+	join ax.RETAILKITCOMPONENT on RETAILKIT.RECID=RETAILKITCOMPONENT.KIT
+	join ax.ECORESPRODUCT on ECORESPRODUCT.RECID = RETAILKITCOMPONENT.COMPONENT
+	join ax.ECORESDISTINCTPRODUCTVARIANT on ECORESDISTINCTPRODUCTVARIANT.RECID = ECORESPRODUCT.RECID
+	join ax.ECORESPRODUCT P1 on P1.RECID = ECORESDISTINCTPRODUCTVARIANT.PRODUCTMASTER
+	join ax.ECORESPRODUCTVARIANTDIMENSIONVALUE on ECORESPRODUCTVARIANTDIMENSIONVALUE.DISTINCTPRODUCTVARIANT = ECORESDISTINCTPRODUCTVARIANT.RECID
+	join ax.ECORESPRODUCTVARIANTCONFIGURATION on ECORESPRODUCTVARIANTCONFIGURATION.RECID = ECORESPRODUCTVARIANTDIMENSIONVALUE.RECID
+	join ax.ECORESCONFIGURATION on ECORESCONFIGURATION.RECID = ECORESPRODUCTVARIANTCONFIGURATION.CONFIGURATION
+	where  RETAILKIT.PRODUCTMASTER=Item.PRODUCT),ItemDim.CONFIGID) ConfigID
+	from 
+	ax.RETAILTRANSACTIONSALESTRANS as Line
+	inner join ax.RETAILTRANSACTIONTABLE TransTable on TransTable.TRANSACTIONID = Line.TRANSACTIONID
+	inner join ax.INVENTDIMCOMBINATION AS DimCombination on DimCombination.RETAILVARIANTID = Line.VARIANTID and DimCombination.ITEMID = Line.ITEMID
+	inner Join ax.INVENTDIM as ItemDim on ItemDim.INVENTDIMID = DimCombination.INVENTDIMID
+	inner Join ax.INVENTTABLE as Item on Item.ITEMID =  Line.ITEMID
+	inner join ax.ECORESPRODUCT as Product on Product.RECID = Item.PRODUCT
+	inner Join ax.ECORESPRODUCTTRANSLATION as Translation on Translation.PRODUCT = Item.PRODUCT
+	inner join ax.ECORESPRODUCTCATEGORY cat on item.product= cat.product
+	inner join ax.ECORESCATEGORYTRANSLATION as CatTrans on CatTrans.CATEGORY = cat.CATEGORY 
+	where Line.DATAAREAID  = 'kfc' and ConfigID!='07' and Line.TRANSACTIONSTATUS != 1 and Line.ItemID!='ITM-003730' and Line.ITEMID!='ITM-006743'
+	and TransTable.ThirdPartyOrderId = @ThirdPartyOrder
+	and (TransTable.SUSPENDEDTRANSACTIONID ='' OR (TransTable.SUSPENDEDTRANSACTIONID !='' and CONFIGID in ('1','2','3','4','5','6'))))Orders 
+  END;
+
+
+
+
+
+
+GO
+
+
+
+
+
+
+
+CREATE Procedure [dbo].[usp_insert_RETAILTRANSACTIONMARKUPTRANS]
+
+ @CALCULATEDAMOUNT numeric = Null-- Rs 1
+,@CHANNEL nvarchar(50)  
+,@MARKUPCODE nvarchar(50) = NULL
+,@MARKUPLINENUM numeric  = NULL
+,@METHOD int = 0
+,@SALELINENUM numeric = NULL
+,@STORE nvarchar(50) = NULL
+,@TAXAMOUNT numeric = NULL
+,@TAXAMOUNTEXCLUSIVE numeric = NULL
+,@TAXAMOUNTINCLUSIVE numeric = NULL
+,@TAXGROUP nvarchar(50) = NULL
+,@TAXITEMGROUP nvarchar(50) = NULL
+,@TERMINALID nvarchar(50) = NULL
+,@TRANSACTIONID nvarchar(50) = NULL
+,@VALUE numeric = NULL
+,@EXEMPT_IN int = 0
+,@ITCCATEGORY_IN int = 0
+,@SERVICECATEGORY_IN int = 0
+,@MODULETYPE int = 0
+ ,@DESCRIPTION nvarchar(50) = NULL
+
+AS
+ 
+   BEGIN
+		INSERT INTO [ax].[RETAILTRANSACTIONMARKUPTRANS]
+           (
+		   [CALCULATEDAMOUNT] -- Rs 1
+           ,[CHANNEL] 
+           ,[CURRENCYCODE]
+           ,[MARKUPCODE]
+           ,[MARKUPLINENUM]
+           ,[METHOD]
+           ,[SALELINENUM]
+           ,[STORE]
+           ,[TAXAMOUNT] 
+           ,[TAXAMOUNTEXCLUSIVE]
+           ,[TAXAMOUNTINCLUSIVE]
+           ,[TAXGROUP]
+           ,[TAXITEMGROUP]
+           ,[TERMINALID]
+           ,[TRANSACTIONID]
+           ,[VALUE] 
+           ,[EXEMPT_IN] --  
+           ,[ITCCATEGORY_IN] --0
+           ,[SERVICECATEGORY_IN] 
+           ,[MODULETYPE] 
+           ,[DESCRIPTION],
+		    [DATAAREAID]
+		   )
+         
+     VALUES
+           (
+		    @CALCULATEDAMOUNT, @CHANNEL, 'PKR', 'POS', '0.0000', 0, '0.0000', @STORE, '0.0000', '0.0000', '0.0000',
+		    'SRB-GST', '', @TERMINALID, @TRANSACTIONID, @VALUE, 0, 0, 0, 1, 'POS Service Fee', 'kfc'
+           )
+
+	END;
+
+GO
+
+
+
+
+
+
+
+CREATE Procedure [dbo].[usp_insert_RETAILTRANSACTIONTAXTRANS]
+
+@TRANSACTIONID nvarchar(120) = null,
+@TERMINALID nvarchar(120) = null,
+@Amount nvarchar(120) = null,
+@Channel nvarchar(120) = null,
+@ISINCLUDEDINPRICE int = Null,
+@StoreId nvarchar(60) = Null,
+@TaxCode nvarchar(60) = Null,
+@TaxBaseAmount numeric = Null,
+@TaxPercentage numeric = Null,
+@ISExempt int = 0,
+@DataAreaId nvarchar(60) = Null,
+@SaleLINENUM numeric = null
+
+AS
+
+ BEGIN
+   INSERT INTO [ax].[RETAILTRANSACTIONTAXTRANS]
+           ([AMOUNT]
+           ,[CHANNEL]
+           ,[ISINCLUDEDINPRICE]
+           ,[SALELINENUM]
+           ,[STOREID]
+           ,[TAXCODE]
+           ,[TERMINALID]
+           ,[TRANSACTIONID]
+           ,[TAXBASEAMOUNT]
+           ,[TAXPERCENTAGE]
+           ,[ISEXEMPT]
+           ,[DATAAREAID]) 
+   VALUES 
+    (
+		   @Amount, 
+		   @CHANNEL, 
+		   @ISINCLUDEDINPRICE, 
+		   @SaleLINENUM, 
+		   @StoreId, 
+		   @TaxCode, 
+		   @TERMINALID, 
+		   @TRANSACTIONID, 
+		   @TaxBaseAmount, 
+		   @TaxPercentage, 
+		   @ISExempt, 
+		   @DataAreaId
+    )
+ 
+ END;
+GO
+
+
+
+
+
+CREATE procedure [dbo].[usp_SimplexRequestLog](
+
+@json nvarchar(max),
+@ThirdPartyOrderId nvarchar(50),
+@storeid nvarchar(50),
+@TerminalId nvarchar(50),
+@ReceiptId nvarchar(50),
+@Message nvarchar(500),
+@createdOn datetime) 
+as 
+begin 
+	insert into SimplexRequestLog (json,ThirdPartyOrderId,storeId,TerminalId, ReceiptId, [Message], createdOn)
+	values(@json,@ThirdPartyOrderId,@storeid,@TerminalId, @ReceiptId, @Message, @createdOn)
+end 
+GO
+
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  StoredProcedure [dbo].[MZNFBRTRANSACTION]    Script Date: 12/10/2024 5:21:58 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE PROCEDURE [dbo].[MZNFBRTRANSACTION] 
+@FBRINVOICENO nvarchar(44),
+@FBRRESPONSE nvarchar(100),
+@STOREID nvarchar(10),
+@TERMINAL nvarchar(10),
+@DATAAREAID nvarchar(4),
+@TRANSACTIONID nvarchar(44),
+@RESPONSE nvarchar(max) 
+
+AS 
+BEGIN 
+insert into dbo.MZNFBRINVOICING (STOREID,DATAAREAID,TERMINAL,TRANSACTIONID,FBRINVOICENO,FBRRESPONSE,RESPONSE) VALUES(@STOREID,@DATAAREAID,@TERMINAL,@TRANSACTIONID,@FBRINVOICENO,@FBRRESPONSE,@RESPONSE)
+--insert into dbo.MZNFBRINVOICING (STOREID,DATAAREAID,TERMINAL,TRANSACTIONID,FBRRESPONSE,RESPONSE) VALUES(@STOREID,@DATAAREAID,@TERMINAL,@TRANSACTIONID,@FBRRESPONSE,@RESPONSE)
+
+END;
+GO
+
+
+
+
+CREATE Procedure [dbo].[usp_CreateRetailTransactionDiscTrans]
+ 
+  @AMOUNT						 numeric(32, 16) = 0,
+  @CHANNEL						 nvarchar(60) = NULL,
+ 								 
+  @DISCOUNTCOST					 numeric(32, 16) = 0,
+  								 
+  @DISCOUNTORIGINTYPE			 numeric(32, 16) = 0,
+  @LINENUM						 numeric(32, 16) = 0,
+  								 
+  @PERCENTAGE					 numeric(32, 16) = 0,
+  @PERIODICDISCOUNTOFFERID		 nvarchar(60),
+  @SALELINENUM                   numeric(32, 16) = 0,
+  @STOREID					     nvarchar(60) = NULL,
+  @TERMINALID					 nvarchar(60) = NULL,
+  @TRANSACTIONID				 nvarchar(60) = NULL,
+  
+  @DATAAREAID					 nvarchar(60) = NULL
+
+  AS
+    BEGIN 
+
+	    Insert Into [ax].[RETAILTRANSACTIONDISCOUNTTRANS]
+			([AMOUNT], [CHANNEL], [DISCOUNTCOST], [DISCOUNTORIGINTYPE], [LINENUM], [PERCENTAGE], 
+			 [PERIODICDISCOUNTOFFERID], [SALELINENUM], [STOREID], 
+			 [TERMINALID], [TRANSACTIONID], DATAAREAID)
+	    Values
+		(@AMOUNT ,@CHANNEL ,@DISCOUNTCOST ,@DISCOUNTORIGINTYPE ,@LINENUM ,@PERCENTAGE 
+		,@PERIODICDISCOUNTOFFERID ,@SALELINENUM ,@STOREID ,@TERMINALID, 
+		 @TRANSACTIONID ,@DATAAREAID)
+
+	 END;
+GO
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_getProductDetailsfalse]    Script Date: 2/14/2025 5:15:30 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE proc [dbo].[sp_getProductDetailsfalse]
+@TransactionID varchar(36)
+as
+select a.ITEMID,erpt.[NAME] AS Description, erpt.PRODUCT,PRODPOOLID ,rtt.CREATEDDATETIME,rtt.STAFF,rtt.TRANSACTIONID,rtt.RECEIPTID , a.QTY,a.Comment,rtt.TRANSACTIONID as "SUSPENDEDTRANSACTIONID",
+a.PRICE,
+a.TAXAMOUNT,
+a.NETAMOUNTINCLTAX,
+rtt.tablenum,
+rtt.terminal,
+rtt.DISCAMOUNT,
+a.DISCAMOUNT,
+a.TAXRATEPERCENT
+
+FROM [ax].RETAILTRANSACTIONTABLE AS rtt
+inner join ax.RETAILTRANSACTIONSALESTRANS  a on a.RECEIPTID = rtt.RECEIPTID
+INNER JOIN [ax].INVENTTABLE it WITH (NOLOCK) ON it.ITEMID = a.ITEMID AND it.DATAAREAID = a.DATAAREAID
+INNER JOIN [ax].ECORESPRODUCTTRANSLATION erpt ON erpt.PRODUCT = it.PRODUCT AND erpt.LANGUAGEID = 'en-us'WHERE rtt.TRANSACTIONID = @TransactionID and    rtt.ENTRYSTATUS <> 1 AND rtt.TYPE = 2   
+GO
+
+USE [RetailChannelDatabase]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_getTaxGroupAndBusinessDate]    Script Date: 2/18/2025 2:39:59 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+ALTER PROCEDURE [dbo].[usp_getTaxGroupAndBusinessDate]
+@storeId NVARCHAR(60),
+@payment_method INT,
+@taxcode NVARCHAR(60)
+AS
+BEGIN
+
+    IF @payment_method = 0
+    BEGIN
+        DECLARE @tempTaxCode NVARCHAR(100);
+
+        -- Assign the value from the query to the variable @tempTaxCode
+        SELECT @tempTaxCode = tax.TAXCODE
+        FROM ax.TAXDATA tax
+        JOIN ax.RETAILSTORETABLE Store ON Store.TAXGROUP = tax.TAXCODE
+        WHERE Store.STORENUMBER = @storeId;
+
+        -- Check if @taxcode is equal to @tempTaxCode
+        IF @taxcode = @tempTaxCode
+        BEGIN
+            -- If tax codes are the same, return the required data
+            SELECT '' AS SOURCETAXGROUP, '' AS RBOSALESTAXOVERRIDECODE,
+                   tax.TAXCODE, '' AS TAXOVERRIDEGROUP, tax.TAXVALUE, 
+                   Store.TAXGROUP, Store.stmtCalcBatchEndTime
+            FROM ax.TAXDATA tax
+            JOIN ax.RETAILSTORETABLE Store ON Store.TAXGROUP = tax.TAXCODE
+            WHERE Store.STORENUMBER = @storeId;
+        END
+        ELSE
+        BEGIN
+
+		SELECT '' AS SOURCETAXGROUP, '' AS RBOSALESTAXOVERRIDECODE,
+                   tax.TAXCODE, '' AS TAXOVERRIDEGROUP, tax.TAXVALUE, 
+                   tax.TAXCODE As TAXGROUP, Store.stmtCalcBatchEndTime
+            FROM ax.TAXDATA tax
+            JOIN ax.RETAILSTORETABLE Store ON Store.TAXOVERRIDEGROUP = tax.RECID
+            WHERE Store.STORENUMBER = @storeId;
+            -- If tax codes are different, return data with the different logic
+           
+        END
+    END
+    ELSE IF @payment_method = 1
+    BEGIN
+        -- For payment method 1, return the tax information
+            SELECT '' AS SOURCETAXGROUP, '' AS RBOSALESTAXOVERRIDECODE,
+                   tax.TAXCODE, '' AS TAXOVERRIDEGROUP, tax.TAXVALUE, 
+                   Storegroup.SOURCETAXGROUP As TAXGROUP, Store.stmtCalcBatchEndTime, tax.*
+            FROM ax.TAXDATA tax
+            JOIN ax.RETAILSALESTAXOVERRIDE Storegroup ON Storegroup.DESTINATIONTAXGROUP = tax.TAXCODE
+			join ax.RETAILSALESTAXOVERRIDEGROUP storeoverridegroup on  storeoverridegroup.code = Storegroup.code 
+			JOIN ax.RETAILSTORETABLE Store  ON Store.TAXOVERRIDEGROUP = storeoverridegroup.RECID
+            WHERE Store.STORENUMBER = @storeId;
+    END
+
+END
+
+-- To execute the stored procedure: 
+-- exec usp_getTaxGroupAndBusinessDate '0072', 1, 'TAXCODE123'
+Go
+
+
+ALTER PROCEDURE [dbo].[usp_create_MZNFBRINVOICING]
+(
+    @STOREID NVARCHAR(10),
+    @DATAAREAID NVARCHAR(4),
+    @TERMINAL NVARCHAR(10),
+    @TRANSACTIONID NVARCHAR(44),
+    @FBRINVOICENO NVARCHAR(44),
+    @FBRRESPONSE NVARCHAR(1000),
+    @RESPONSE NVARCHAR(MAX)
+)
+AS
+BEGIN
+    INSERT INTO [ext].[MZNFBRINVOICING]
+    (
+        STOREID, DATAAREAID, TERMINAL, TRANSACTIONID, 
+        FBRINVOICENO, FBRRESPONSE, RESPONSE
+    )
+    VALUES
+    (
+        @STOREID, @DATAAREAID, @TERMINAL, @TRANSACTIONID, 
+        @FBRINVOICENO, @FBRRESPONSE, @RESPONSE
+    );
+
+    -- Wait until the transaction is visible in MZNFBRINVOICING (Max 1 second)
+    DECLARE @StartTime DATETIME = GETDATE();
+
+    WHILE NOT EXISTS (SELECT 1 FROM [ext].[MZNFBRINVOICING] WHERE TRANSACTIONID = @TRANSACTIONID)
+    BEGIN
+        -- If more than 1 second has passed, exit loop
+        IF DATEDIFF(MILLISECOND, @StartTime, GETDATE()) > 1000
+            BREAK;
+        
+        WAITFOR DELAY '00:00:00.05'; -- Wait 50ms before checking again
+    END;
+END;
+
+GO
+
+
+ALTER proc [dbo].[sp_getProductDetailsfalse]
+@TransactionID varchar(36)
+as
+select a.ITEMID,erpt.[NAME] AS Description, erpt.PRODUCT,PRODPOOLID ,rtt.CREATEDDATETIME,rtt.STAFF,rtt.TRANSACTIONID,rtt.RECEIPTID , a.QTY,a.Comment,rtt.TRANSACTIONID as "SUSPENDEDTRANSACTIONID",
+a.PRICE,
+a.TAXAMOUNT,
+a.NETAMOUNTINCLTAX,
+rtt.tablenum,
+rtt.terminal,
+rtt.DISCAMOUNT,
+a.DISCAMOUNT,
+a.TAXRATEPERCENT,
+cat.NAME,
+rtt.REPLICATIONCOUNTERFROMORIGIN
+FROM [ax].RETAILTRANSACTIONTABLE AS rtt
+inner join ax.RETAILTRANSACTIONSALESTRANS  a on a.RECEIPTID = rtt.RECEIPTID
+INNER JOIN [ax].INVENTTABLE it WITH (NOLOCK) ON it.ITEMID = a.ITEMID AND it.DATAAREAID = a.DATAAREAID
+INNER JOIN [ax].ECORESPRODUCTTRANSLATION erpt ON erpt.PRODUCT = it.PRODUCT AND erpt.LANGUAGEID = 'en-us'
+inner join [ax].ECORESPRODUCTCATEGORY epct ON erpt.PRODUCT = epct.PRODUCT
+inner join [ax].ECORESCATEGORY cat on epct.CATEGORY = cat.RECID
+WHERE rtt.TRANSACTIONID = @TransactionID and  rtt.ENTRYSTATUS <> 1 AND rtt.TYPE = 2;
+
+
+

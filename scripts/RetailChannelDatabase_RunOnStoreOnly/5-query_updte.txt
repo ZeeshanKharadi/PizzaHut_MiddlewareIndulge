@@ -1,0 +1,1 @@
+update ax.RETAILTENDERTYPETABLE set isKiosk = 1;

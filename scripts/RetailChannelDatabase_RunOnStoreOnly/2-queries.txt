@@ -1,0 +1,383 @@
+
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  Table [ext].[FBRResponse]    Script Date: 11/10/2022 16:00:45 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+SET ANSI_PADDING ON
+GO
+IF NOT EXISTS (
+
+    SELECT 1 
+    FROM INFORMATION_SCHEMA.TABLES 
+    WHERE TABLE_SCHEMA = 'ext' 
+    AND TABLE_NAME = 'FBRResponse'
+)
+
+BEGIN
+
+CREATE TABLE [ext].[FBRResponse](
+	[TransactionID] [varchar](255) NULL,
+	[ResponseFBR] [varchar](1000) NULL,
+	[Reason] [varchar](1000) NULL,
+	[StoreID] [varchar](10) NULL
+) ON [PRIMARY]
+
+END
+GO
+
+
+IF NOT EXISTS (
+
+    SELECT 1 
+    FROM INFORMATION_SCHEMA.TABLES 
+    WHERE TABLE_SCHEMA = 'ext' 
+    AND TABLE_NAME = 'MZNFBRINVOICING'
+)
+
+BEGIN
+CREATE TABLE [ext].[MZNFBRINVOICING](
+	[REPLICATIONCOUNTERFROMORIGIN] [int] IDENTITY(1,1) NOT NULL,
+	[STOREID] [nvarchar](10) NOT NULL,
+	[DATAAREAID] [nvarchar](4) NOT NULL,
+	[ROWVERSION] [timestamp] NOT NULL,
+	[TERMINAL] [nvarchar](10) NOT NULL,
+	[TRANSACTIONID] [nvarchar](44) NOT NULL,
+	[FBRINVOICENO] [nvarchar](44) NOT NULL,
+	[FBRRESPONSE] [nvarchar](1000) NOT NULL,
+	[RESPONSE] [nvarchar](max) NULL
+ CONSTRAINT [PK_MZNFBRINVOICING] PRIMARY KEY CLUSTERED 
+(
+	[REPLICATIONCOUNTERFROMORIGIN] ASC,
+	[STOREID] ASC,
+	[TRANSACTIONID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+END
+GO
+
+IF NOT EXISTS (
+
+    SELECT 1 
+    FROM INFORMATION_SCHEMA.TABLES 
+    WHERE TABLE_SCHEMA = 'ext' 
+    AND TABLE_NAME = 'MZNPOSTERMINALINFO'
+)
+
+BEGIN
+
+CREATE TABLE [ext].[MZNPOSTERMINALINFO](
+	[TERMINAL] [nvarchar](10) NOT NULL,
+	[POSID] [nvarchar](20) NOT NULL,
+	[AuthorityType] [int] NOT NULL,
+	[token] [nvarchar](255) NOT NULL,
+	[OnlineURL] [nvarchar](500) NOT NULL,
+	[offlinetoken] [nvarchar](255) NULL,
+ CONSTRAINT [MZNTERMINALIDX] PRIMARY KEY NONCLUSTERED 
+(
+	[TERMINAL] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+END
+GO
+
+IF NOT EXISTS (
+
+    SELECT 1 
+    FROM INFORMATION_SCHEMA.TABLES 
+    WHERE TABLE_SCHEMA = 'ext' 
+    AND TABLE_NAME = 'RETAILGIFTCARDTABLE'
+)
+
+BEGIN
+
+CREATE TABLE [ext].[RETAILGIFTCARDTABLE](
+	[ENTRYID] [nvarchar](50) NOT NULL,
+	[ACTIVEFROM] [datetime]  NULL,
+	[EXPIRYDATE] [datetime]  NULL,
+	[FACEVALUE] [numeric](32, 6)  NULL,
+	[Amount] [numeric](32, 6)  NULL,
+	[ITEMLIST] [nvarchar](70)  NULL,
+	[CUSTNTN] [nvarchar](50)  NULL
+	
+ CONSTRAINT [typeEntryIdx] PRIMARY KEY NONCLUSTERED 
+(
+	[ENTRYID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+END
+GO
+
+
+
+
+drop table if exists [dbo].[RetailTransaction];
+drop table if exists [dbo].[RetailTransactionSalesTrans];
+drop table if exists [dbo].[PaymentMethodsTable];
+drop table if exists [dbo].[ItemWisePrinterConfiguration];
+drop table if exists [ext].[FBRResponse];
+drop table if exists [dbo].[MCSDONUMBERTABLE];
+drop table if exists [dbo].[MZNFBRINVOICING];
+drop table if exists [dbo].[MZNPOSTERMINALINFO];
+drop table if exists [dbo].[RETAILGIFTCARDTABLE];
+drop table if exists [dbo].[CustomerPayCash];
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  Table [dbo].[RetailTransaction]    Script Date: 2/14/2025 5:36:51 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[RetailTransaction](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[GlobalId] [uniqueidentifier] NULL,
+	[TransactionId] [nvarchar](60) NOT NULL,
+	[DataAreaId] [nvarchar](50) NULL,
+	[Currency] [nvarchar](50) NULL,
+	[GrossAmount] [decimal](18, 2) NULL,
+	[NetAmount] [decimal](18, 2) NULL,
+	[NetPrice] [decimal](18, 2) NULL,
+	[TransDate] [datetime2](7) NULL,
+	[PaymentMode] [int] NULL,
+	[Store] [nvarchar](10) NULL,
+	[TenderTypeId] [nvarchar](50) NULL,
+	[AmountCur] [nvarchar](50) NULL,
+	[ThirdPartyOrderId] [nvarchar](50) NULL,
+	[Json] [nvarchar](max) NULL,
+	[IsPaid] [bit] NULL,
+	[IsActive] [bit] NULL,
+	[IsDeleted] [bit] NULL,
+	[CreatedOn] [datetime2](7) NULL,
+	[CreatedBy] [nvarchar](25) NULL,
+	[ModifiedOn] [datetime2](7) NULL,
+	[ModifiedBy] [nvarchar](25) NULL,
+	[Comment] [nvarchar](100) NULL,
+	[Floor] [nvarchar](255) NULL,
+	[Table] [nvarchar](255) NULL,
+	[Server] [nvarchar](255) NULL,
+	[Person] [nvarchar](255) NULL,
+	[DiscAmount] [decimal](18, 2) NULL,
+	[DiscAmountWithoutTax] [decimal](18, 2) NULL,
+	[isFinalize] [bit] NULL,
+	[lasttransactionid] [varchar](100) NULL,
+	[TaxGroup] [nvarchar](60) NULL,
+	[isFinalizeUpdate] [bit] NULL,
+	[DiscountOfferId] [nvarchar](100) NULL,
+	[isOrderLock] [bit] NULL,
+ CONSTRAINT [PK_RetailTransaction] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[RetailTransaction] ADD  CONSTRAINT [DF_RetailTransaction_TenderTypeId]  DEFAULT (N'0') FOR [TenderTypeId]
+GO
+
+ALTER TABLE [dbo].[RetailTransaction] ADD  CONSTRAINT [DF_RetailTransaction_IsPaid]  DEFAULT ((0)) FOR [IsPaid]
+GO
+
+
+USE [RetailChannelDatabase]
+GO
+
+/****** Object:  Table [dbo].[RetailTransactionSalesTrans]    Script Date: 2/14/2025 7:22:58 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[RetailTransactionSalesTrans](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[GlobalId] [uniqueidentifier] NULL,
+	[TransactionId] [nvarchar](60) NOT NULL,
+	[Store] [nvarchar](50) NULL,
+	[ItemId] [nvarchar](50) NULL,
+	[ItemName] [nvarchar](250) NULL,
+	[Linenum] [numeric](18, 0) NULL,
+	[Quantity] [numeric](18, 0) NULL,
+	[TaxAmount] [decimal](18, 2) NULL,
+	[NetAmount] [decimal](18, 2) NULL,
+	[NetAmountInclTax] [decimal](18, 2) NULL,
+	[TransdDate] [datetime2](7) NULL,
+	[Price] [decimal](18, 2) NULL,
+	[NetPrice] [decimal](18, 2) NULL,
+	[Comment] [nvarchar](250) NULL,
+	[IsActive] [bit] NULL,
+	[IsDeleted] [bit] NULL,
+	[CreatedOn] [datetime2](7) NULL,
+	[CreatedBy] [nvarchar](25) NULL,
+	[ModifiedOn] [datetime2](7) NULL,
+	[ModifiedBy] [nvarchar](25) NULL,
+	[LineComment] [nvarchar](max) NULL,
+	[DiscAmount] [decimal](18, 2) NULL,
+	[DiscAmountWithOutTax] [decimal](18, 2) NULL,
+	[PeriodicDiscAmount] [float] NULL,
+	[PeriodicPercentaGeDisc] [float] NULL,
+	[version] [int] NULL,
+	[lasttransactionid] [varchar](100) NULL,
+ CONSTRAINT [PK_RetailTransactionSalesTrans] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+
+
+
+CREATE TABLE [dbo].[PaymentMethodsTable](
+	[TenderType] [varchar](50) NULL,
+	[TenderName] [varchar](50) NULL
+) ON [PRIMARY]
+GO
+
+
+
+/****** Object:  Table [dbo].[ItemWisePrinterConfiguration]    Script Date: 12/10/2024 5:18:19 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[ItemWisePrinterConfiguration](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[PrinterName] [varchar](100) NOT NULL,
+	[PrinterStatus] [bit] NOT NULL,
+	[PoolId] [varchar](50) NOT NULL,
+	[Floor] [varchar](50) NOT NULL,
+ CONSTRAINT [PK__ItemWise__3214EC078D3F7353] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+CREATE TABLE [ext].[FBRResponse](
+	[TransactionID] [varchar](255) NULL,
+	[ResponseFBR] [varchar](1000) NULL,
+	[Reason] [varchar](1000) NULL,
+	[StoreID] [varchar](10) NULL
+) ON [PRIMARY]
+GO
+
+
+
+
+CREATE TABLE [dbo].[MCSDONUMBERTABLE](
+	[TERMINAL] [nvarchar](10) NOT NULL,
+	[BATCHID] [bigint] NOT NULL,
+	[CHANNEL] [bigint] NOT NULL,
+	[RECEIPTID] [nvarchar](18) NOT NULL,
+	[REPLICATIONCOUNTERFROMORIGIN] [int] IDENTITY(1,1) NOT NULL,
+	[SHIFT] [nvarchar](10) NOT NULL,
+	[SHIFTDATE] [date] NOT NULL,
+	[STAFF] [nvarchar](25) NOT NULL,
+	[STORE] [nvarchar](10) NOT NULL,
+	[TRANSACTIONID] [nvarchar](44) NOT NULL,
+	[DATAAREAID] [nvarchar](4) NOT NULL,
+	[DONumber] [int] NOT NULL,
+ CONSTRAINT [PK_MCSDONUMBERTABLE] PRIMARY KEY CLUSTERED 
+(
+	[REPLICATIONCOUNTERFROMORIGIN] ASC,
+	[STORE] ASC,
+	[TRANSACTIONID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+
+CREATE TABLE [dbo].[MZNFBRINVOICING](
+	[REPLICATIONCOUNTERFROMORIGIN] [int] IDENTITY(1,1) NOT NULL,
+	[STOREID] [nvarchar](10) NOT NULL,
+	[DATAAREAID] [nvarchar](4) NOT NULL,
+	[ROWVERSION] [timestamp] NOT NULL,
+	[TERMINAL] [nvarchar](10) NOT NULL,
+	[TRANSACTIONID] [nvarchar](44) NOT NULL,
+	[FBRINVOICENO] [nvarchar](44) NOT NULL,
+	[FBRRESPONSE] [nvarchar](1000) NOT NULL,
+	[RESPONSE] [nvarchar](max) NOT NULL,
+ CONSTRAINT [PK_MZNFBRINVOICING] PRIMARY KEY CLUSTERED 
+(
+	[REPLICATIONCOUNTERFROMORIGIN] ASC,
+	[STOREID] ASC,
+	[TRANSACTIONID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+
+
+
+CREATE TABLE [dbo].[MZNPOSTERMINALINFO](
+	[TERMINAL] [nvarchar](10) NOT NULL,
+	[POSID] [nvarchar](20) NOT NULL,
+	[AuthorityType] [int] NOT NULL,
+	[OnlineURL] [nvarchar](500) NOT NULL,
+	[Token] [nvarchar](100) NULL,
+	[OfflineToken] [nvarchar](100) NULL,
+ CONSTRAINT [MZNTERMINALIDX] PRIMARY KEY NONCLUSTERED 
+(
+	[TERMINAL] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+
+CREATE TABLE [dbo].[RETAILGIFTCARDTABLE](
+	[ENTRYID] [nvarchar](50) NOT NULL,
+	[ACTIVEFROM] [datetime] NULL,
+	[EXPIRYDATE] [datetime] NULL,
+	[FACEVALUE] [numeric](32, 6) NULL,
+	[Amount] [numeric](32, 6) NULL,
+	[ITEMLIST] [nvarchar](70) NULL,
+	[CUSTNTN] [nvarchar](50) NULL,
+ CONSTRAINT [typeEntryIdx] PRIMARY KEY NONCLUSTERED 
+(
+	[ENTRYID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+
+CREATE TABLE [dbo].[CustomerPayCash](
+	[CashId] [int] IDENTITY(1,1) NOT NULL,
+	[Cash] [numeric](18, 0) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CashId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+
+
+INSERT INTO [dbo].[CustomerPayCash] ([Cash])
+VALUES 
+    (10),
+    (20),
+    (50),
+    (100),
+    (500),
+    (1000),
+    (5000);

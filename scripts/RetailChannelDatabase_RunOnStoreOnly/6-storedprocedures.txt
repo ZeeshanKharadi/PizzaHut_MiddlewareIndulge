@@ -1,0 +1,37 @@
+DROP PROCEDURE IF EXISTS [ext].[LogSP];
+DROP PROCEDURE IF EXISTS [ext].[MZNFBRTRANSACTION];
+
+USE [RetailChannelDatabase]
+GO
+
+
+CREATE PROCEDURE [ext].[LogSP] 
+@TransactionID nvarchar(255) NULL,
+	@ResponseFBR nvarchar(1000) NULL,
+	@Reason varchar(1000) NULL,
+	@StoreID nvarchar(10) NULL
+	
+
+AS 
+BEGIN 
+insert into ext.FBRResponse (TransactionID ,ResponseFBR ,Reason , StoreID ) VALUES(@TransactionID,@ResponseFBR,@Reason,@StoreID)
+END
+
+GO
+
+CREATE PROCEDURE [ext].[MZNFBRTRANSACTION] 
+@FBRINVOICENO nvarchar(44),
+@FBRRESPONSE nvarchar(100),
+@STOREID nvarchar(10),
+@TERMINAL nvarchar(10),
+@DATAAREAID nvarchar(4),
+@TRANSACTIONID nvarchar(44),
+@RESPONSE nvarchar(max) 
+
+AS 
+BEGIN 
+insert into ext.MZNFBRINVOICING (STOREID,DATAAREAID,TERMINAL,TRANSACTIONID,FBRINVOICENO,FBRRESPONSE,RESPONSE) VALUES(@STOREID,@DATAAREAID,@TERMINAL,@TRANSACTIONID,@FBRINVOICENO,@FBRRESPONSE,@RESPONSE)
+END
+
+GO
+
