@@ -30,19 +30,43 @@ BEGIN
 END
 
 
----------
+------------------------------------------------------------------------------------------
+-- Add columns to ax.retailtransactiontable if they don't exist
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailtransactiontable' AND COLUMN_NAME = 'ThirdPartyOrderId')
+    ALTER TABLE ax.retailtransactiontable ADD ThirdPartyOrderId VARCHAR(50) NULL;
 
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailtransactiontable' AND COLUMN_NAME = 'PickUpMode')
+    ALTER TABLE ax.retailtransactiontable ADD PickUpMode VARCHAR(50) NULL;
 
-ALTER TABLE ax.retailtransactiontable
-ADD ThirdPartyOrderId VARCHAR(50) NULL,      -- Add ThirdPartyOrderId column
-    PickUpMode VARCHAR(50) NULL,     -- Add PickUpMode column
-    TableNum VARCHAR(50) NULL,               -- Add TableNum column
- Source VARCHAR(50) NULL,         -- Add Source column
-  HDSOrderID VARCHAR(50) NULL,             -- Add HDSOrderID column
-    PaymentMethod VARCHAR(50) NULL;  -- Add PaymentMethod column
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailtransactiontable' AND COLUMN_NAME = 'TableNum')
+    ALTER TABLE ax.retailtransactiontable ADD TableNum VARCHAR(50) NULL;
 
-alter table ItemWisePrinterConfiguration add terminal varchar(100);
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailtransactiontable' AND COLUMN_NAME = 'Source')
+    ALTER TABLE ax.retailtransactiontable ADD Source VARCHAR(50) NULL;
 
--- RetailChannelDatabase
-alter table ax.retailinventtable
-add POSCode nvarchar(30), Channel nvarchar(30)
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailtransactiontable' AND COLUMN_NAME = 'HDSOrderID')
+    ALTER TABLE ax.retailtransactiontable ADD HDSOrderID VARCHAR(50) NULL;
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailtransactiontable' AND COLUMN_NAME = 'PaymentMethod')
+    ALTER TABLE ax.retailtransactiontable ADD PaymentMethod VARCHAR(50) NULL;
+
+-- Add column to ItemWisePrinterConfiguration if it doesn't exist
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'ItemWisePrinterConfiguration' AND COLUMN_NAME = 'terminal')
+    ALTER TABLE ItemWisePrinterConfiguration ADD terminal VARCHAR(100);
+
+-- Add columns to ax.retailinventtable if they don't exist
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailinventtable' AND COLUMN_NAME = 'POSCode')
+    ALTER TABLE ax.retailinventtable ADD POSCode NVARCHAR(30);
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'retailinventtable' AND COLUMN_NAME = 'Channel')
+    ALTER TABLE ax.retailinventtable ADD Channel NVARCHAR(30);
+
