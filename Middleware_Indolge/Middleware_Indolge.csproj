@@ -21,13 +21,13 @@
 
   <ItemGroup>
     <Reference Include="POS_IntegrationCommonDTO">
-      <HintPath>..\..\..\..\projectdll\POS_IntegrationCommonDTO.dll</HintPath>
+      <HintPath>..\..\..\..\dll\POS_IntegrationCommonDTO.dll</HintPath>
     </Reference>
     <Reference Include="POS_IntegrationCommonInfrastructure">
-      <HintPath>..\..\..\..\projectdll\POS_IntegrationCommonInfrastructure.dll</HintPath>
+      <HintPath>..\..\..\..\dll\POS_IntegrationCommonInfrastructure.dll</HintPath>
     </Reference>
     <Reference Include="POS_Integration_CommonCore">
-      <HintPath>..\..\..\..\projectdll\POS_Integration_CommonCore.dll</HintPath>
+      <HintPath>..\..\..\..\dll\POS_Integration_CommonCore.dll</HintPath>
     </Reference>
   </ItemGroup>
 
