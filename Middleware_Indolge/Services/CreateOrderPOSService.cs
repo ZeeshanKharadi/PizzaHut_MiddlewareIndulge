@@ -132,9 +132,16 @@ namespace Middleware_Indolge.Services
                         StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(requestObject.Store);
                         _logger.LogInformation("Call SendCancelKDSOrderToExternalApiV2");
                         _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
-                        string apiResult = await SendCancelKDSOrderToExternalApiV2(ThirdPartyOrderId, getStoreinfo);
-                        _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
 
+                        string apiResult = await SendCancelKDSOrderToExternalApiV2(request, getStoreinfo,ThirdPartyOrderId);
+                        _logger.LogInformation("Response   {method}", apiResult);
+
+                       
+                        if (string.IsNullOrWhiteSpace(apiResult) || (!apiResult.TrimStart().StartsWith("{") && !apiResult.TrimStart().StartsWith("[")))
+                        {
+                            response.Message = "API did not return valid JSON: " + apiResult;
+                            return response;
+                        }
                         response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                         UpdateOrderStatus(ThirdPartyOrderId, request.OrderStatus);
                     }
@@ -302,11 +309,11 @@ namespace Middleware_Indolge.Services
             string apiUrl = "http://localhost:1638/api/OrderKDS/cancelKDSOrder/?OrderId=" + ThirdPartyOrderId;
             return await ApiHelper.DeleteAsync(apiUrl);
         }
-        public async Task<string> SendCancelKDSOrderToExternalApiV2(string ThirdPartyOrderId, StoreInfo storeinfo)
+        public async Task<string> SendCancelKDSOrderToExternalApiV2(UpdateOrderModel request, StoreInfo storeinfo,string orderId=null)
         {
             // Safely combine base URL and endpoint
-            string apiUrl = $"{storeinfo.RSSUUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail";
-            return await ApiHelper.PutAsync(apiUrl, ThirdPartyOrderId);
+            string apiUrl = $"{storeinfo.RSSUUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail?thirdPartyOrderId="+ orderId;
+            return await ApiHelper.PutAsync(apiUrl, request);
         }
 
 
