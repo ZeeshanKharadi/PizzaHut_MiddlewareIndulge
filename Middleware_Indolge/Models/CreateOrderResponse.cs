@@ -10,7 +10,9 @@
 
     public class CreateOrderResult
     {
-        public string FBRInvoiceNo { get; set; }
-        public string ReceiptId { get; set; }
+        public string? FBRInvoiceNo { get; set; }
+        public string? ReceiptId { get; set; }
+        public string? OrderId { get; set; }
+        public string? trackUrl { get; set; }
     }
 }

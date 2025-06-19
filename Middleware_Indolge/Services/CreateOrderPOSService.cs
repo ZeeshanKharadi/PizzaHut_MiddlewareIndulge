@@ -91,6 +91,11 @@ namespace Middleware_Indolge.Services
                     {
                         response.Message = "Order Created Successfully";
                         response.HttpStatusCode = 200;
+                        response.Result= new CreateOrderResult
+                        {
+                            OrderId= deserializedResult?.Result?.OrderId?.ToString(),   
+                            trackUrl = deserializedResult?.Result?.trackUrl?.ToString(),
+                        };
                     }
                     else
                     {
