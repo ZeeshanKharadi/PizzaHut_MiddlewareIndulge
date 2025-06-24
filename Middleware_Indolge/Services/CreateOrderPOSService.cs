@@ -83,14 +83,22 @@ namespace Middleware_Indolge.Services
                     _logger.LogInformation("Call SendOrderToExternalApiV2");
                     _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
                     string apiResult = await SendOrderToExternalApiV2(request, getStoreinfo);
+                    if (string.IsNullOrWhiteSpace(apiResult) || (!apiResult.TrimStart().StartsWith("{") && !apiResult.TrimStart().StartsWith("[")))
+                    {
+                        _logger.LogInformation("Response   {method}", apiResult);
+
+                        response.Message = "API did not return valid JSON: " + apiResult;
+                       // return response;
+                    }
                     _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
 
                     var deserializedResult = JsonConvert.DeserializeObject<dynamic>(apiResult);
 
-                    if (deserializedResult?.status == "ok")
+                    if (deserializedResult?.Status == "ok")
                     {
                         response.Message = "Order Created Successfully";
                         response.HttpStatusCode = 200;
+
                         response.Result= new CreateOrderResult
                         {
                             OrderId= deserializedResult?.Result?.OrderId?.ToString(),   
@@ -102,7 +110,7 @@ namespace Middleware_Indolge.Services
                         DeleteCurrentRecord(request.ThirdPartyOrderId);
                         response.Message = "Failed to create order By DT";
                     }
-                    response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                   // response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                     return response;
                 }
                 else
@@ -136,11 +144,10 @@ namespace Middleware_Indolge.Services
                         var requestObject = JsonConvert.DeserializeObject<CreateOrderModel>(json);
                         StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(requestObject.Store);
                         _logger.LogInformation("Call SendCancelKDSOrderToExternalApiV2");
-                        _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
+                        _logger.LogInformation("Request  {method}", System.Text.Json.JsonSerializer.Serialize(request));
 
                         string apiResult = await SendCancelKDSOrderToExternalApiV2(request, getStoreinfo,ThirdPartyOrderId);
-                        _logger.LogInformation("Response   {method}", apiResult);
-
+                        _logger.LogInformation("Response  {method}", apiResult);
                        
                         if (string.IsNullOrWhiteSpace(apiResult) || (!apiResult.TrimStart().StartsWith("{") && !apiResult.TrimStart().StartsWith("[")))
                         {
