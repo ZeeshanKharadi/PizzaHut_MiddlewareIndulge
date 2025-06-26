@@ -29,6 +29,7 @@ namespace Middleware_Indolge.Controllers
         {
             _logger.LogInformation("Call CreateOrder");
             _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
+
             CreateOrderResponse response = new CreateOrderResponse();
 
             try

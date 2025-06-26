@@ -2,6 +2,24 @@
 
 namespace Middleware_Indolge.Models
 {
+    public class RequiredIfDeliveryAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            // Access the entire model to get the 'orderChannel' property
+            var model = validationContext.ObjectInstance;
+            var orderChannelProperty = model.GetType().GetProperty("orderChannel");
+            var orderChannelValue = orderChannelProperty?.GetValue(model, null) as string;
+
+            // Check if 'orderChannel' is "delivery" and 'addressNo' is null or empty
+            if (orderChannelValue.ToLower() == "delivery" && string.IsNullOrEmpty(value?.ToString()))
+            {
+                return new ValidationResult("Address is required for delivery orders.", new[] { validationContext.MemberName });
+            }
+
+            return ValidationResult.Success;
+        }
+    }
     public sealed class CreateOrderModel
     {
         [Required]
@@ -37,6 +55,7 @@ namespace Middleware_Indolge.Models
 
         [Required]
         public int Type { get; set; }
+       
 
         public string? TenderTypeId { get; set; }
 
@@ -80,9 +99,8 @@ namespace Middleware_Indolge.Models
         [Required]
         public string city { get; set; }
         public string? street { get; set; }
-       
-        [Required]
-        public string addressNo { get; set; }
+
+      
         public string? secondaryAddress { get; set; }
         public string? postCode { get; set; }
         public string? phone { get; set; }
@@ -93,7 +111,9 @@ namespace Middleware_Indolge.Models
 
         [Required]
         public string orderChannel { get; set; }
-        
+        [RequiredIfDelivery]
+        public string? addressNo { get; set; }
+
         [Required]
         public decimal lat { get; set; }
         
