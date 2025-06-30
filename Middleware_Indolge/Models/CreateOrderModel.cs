@@ -111,7 +111,7 @@ namespace Middleware_Indolge.Models
 
         [Required]
         public string orderChannel { get; set; }
-        [RequiredIfDelivery]
+       // [RequiredIfDelivery]
         public string? addressNo { get; set; }
 
         [Required]
@@ -124,6 +124,7 @@ namespace Middleware_Indolge.Models
         public bool? isNotPaid { get; set; }
         public bool? sendMessage { get; set; }
         public decimal? TaxPercentage { get; set; }
+        public int source { get; set; } // 1 = Store order  2 = Online order 3 = Mobile order
     }
 
     public class SalesLine
