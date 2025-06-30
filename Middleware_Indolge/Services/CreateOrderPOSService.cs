@@ -78,6 +78,11 @@ namespace Middleware_Indolge.Services
                 {
                     // Insert into DynamicPosOrder Table
                     InsertDynamicPOSOrder(request);
+                   
+                    if(string.IsNullOrEmpty(request.Company))
+                    {
+                        request.Company = "php";
+                    }
                     // Get store URL 
                     StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
                     _logger.LogInformation("Call SendOrderToExternalApiV2");
@@ -88,7 +93,7 @@ namespace Middleware_Indolge.Services
                         _logger.LogInformation("Response   {method}", apiResult);
 
                         response.Message = "API did not return valid JSON: " + apiResult;
-                       // return response;
+                        // return response;
                     }
                     _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
 
@@ -99,9 +104,9 @@ namespace Middleware_Indolge.Services
                         response.Message = "Order Created Successfully";
                         response.HttpStatusCode = 200;
 
-                        response.Result= new CreateOrderResult
+                        response.Result = new CreateOrderResult
                         {
-                            OrderId= deserializedResult?.Result?.OrderId?.ToString(),   
+                            OrderId = deserializedResult?.Result?.OrderId?.ToString(),
                             trackUrl = deserializedResult?.Result?.trackUrl?.ToString(),
                         };
                     }
@@ -110,7 +115,7 @@ namespace Middleware_Indolge.Services
                         DeleteCurrentRecord(request.ThirdPartyOrderId);
                         response.Message = "Failed to create order By DT";
                     }
-                   // response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
+                    // response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                     return response;
                 }
                 else
@@ -146,9 +151,9 @@ namespace Middleware_Indolge.Services
                         _logger.LogInformation("Call SendCancelKDSOrderToExternalApiV2");
                         _logger.LogInformation("Request  {method}", System.Text.Json.JsonSerializer.Serialize(request));
 
-                        string apiResult = await SendCancelKDSOrderToExternalApiV2(request, getStoreinfo,ThirdPartyOrderId);
+                        string apiResult = await SendCancelKDSOrderToExternalApiV2(request, getStoreinfo, ThirdPartyOrderId);
                         _logger.LogInformation("Response  {method}", apiResult);
-                       
+
                         if (string.IsNullOrWhiteSpace(apiResult) || (!apiResult.TrimStart().StartsWith("{") && !apiResult.TrimStart().StartsWith("[")))
                         {
                             response.Message = "API did not return valid JSON: " + apiResult;
@@ -321,10 +326,10 @@ namespace Middleware_Indolge.Services
             string apiUrl = "http://localhost:1638/api/OrderKDS/cancelKDSOrder/?OrderId=" + ThirdPartyOrderId;
             return await ApiHelper.DeleteAsync(apiUrl);
         }
-        public async Task<string> SendCancelKDSOrderToExternalApiV2(UpdateOrderModel request, StoreInfo storeinfo,string orderId=null)
+        public async Task<string> SendCancelKDSOrderToExternalApiV2(UpdateOrderModel request, StoreInfo storeinfo, string orderId = null)
         {
             // Safely combine base URL and endpoint
-            string apiUrl = $"{storeinfo.RSSUUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail?thirdPartyOrderId="+ orderId;
+            string apiUrl = $"{storeinfo.RSSUUrl.TrimEnd('/')}/api/OrderKDS/cancelOrderForDragonTail?thirdPartyOrderId=" + orderId;
             return await ApiHelper.PutAsync(apiUrl, request);
         }
 
@@ -437,7 +442,15 @@ namespace Middleware_Indolge.Services
 
             if (string.IsNullOrEmpty(RSSUUrl))
             {
-                RSSUUrl = "https://php-dt.rustamfoodspk.com:447"; // Replace with your actual default value
+                if (defaultCustAccount == "1002")
+                {
+                    RSSUUrl = "https://php-dt.rustamfoodspk.com:447";
+                }
+                else if (defaultCustAccount == "1001")
+                {
+                    RSSUUrl = "https://php-gj.rustamfoodspk.com:555";
+                }
+                // Replace with your actual default value
                 result.Value.FirstOrDefault().RSSUUrl = RSSUUrl;                           // Replace the problematic line with a safer approach that avoids null conditional assignment.
             }
             //StoreUrlCache.SetStoreUrl(defaultCustAccount, RSSUUrl);

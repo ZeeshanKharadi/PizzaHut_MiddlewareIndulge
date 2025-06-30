@@ -123,6 +123,7 @@ namespace Middleware_Indolge.Models
         public int? clientId { get; set; }
         public bool? isNotPaid { get; set; }
         public bool? sendMessage { get; set; }
+        public decimal? TaxPercentage { get; set; }
     }
 
     public class SalesLine
@@ -173,5 +174,7 @@ namespace Middleware_Indolge.Models
 
         [Required]
         public string position { get; set; }
+
+      
     }
 }
