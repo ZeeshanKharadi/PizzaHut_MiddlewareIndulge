@@ -69,4 +69,32 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
                WHERE TABLE_NAME = 'retailinventtable' AND COLUMN_NAME = 'Channel')
     ALTER TABLE ax.retailinventtable ADD Channel NVARCHAR(30);
+--------------------------------------------------------------------------------------
+
+-- Add Phone column if not exists
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'retailtransactiontable'
+      AND TABLE_SCHEMA = 'ax'
+      AND COLUMN_NAME = 'Phone'
+)
+BEGIN
+    ALTER TABLE ax.retailtransactiontable
+    ADD Phone VARCHAR(20) NULL;
+END;
+
+-- Add Address column if not exists
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'retailtransactiontable'
+      AND TABLE_SCHEMA = 'ax'
+      AND COLUMN_NAME = 'Address'
+)
+BEGIN
+    ALTER TABLE ax.retailtransactiontable
+    ADD Address VARCHAR(250) NULL;
+END;
+
 

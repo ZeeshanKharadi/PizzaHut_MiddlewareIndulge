@@ -958,4 +958,83 @@ inner join [ax].ECORESCATEGORY cat on epct.CATEGORY = cat.RECID
 WHERE rtt.TRANSACTIONID = @TransactionID and  rtt.ENTRYSTATUS <> 1 AND rtt.TYPE = 2;
 
 
+----------------------------------------------------------------------------------------------------------------------------------------------
+  
+  
+  
+CREATE or alter Procedure [dbo].[usp_create_axRetailTransactionTable]  
+  
+@Terminal    nvarchar(250) = Null,  
+@BATCHID    bigint = NULL,  
+@CHANNEL    bigint = NULL,  
+@CURRENCY    nvarchar(100) = NULL,  
+@GROSSAMOUNT   decimal(18,2) = NULL,  
+@PaymentAmount   decimal = NULL,  
+@INVENTLOCATIONID  nvarchar(250) = NULL,  
+@NETAMOUNT    decimal(18,2) = NULL,  
+@NETPRICE    decimal(18,2) = NULL,  
+@NUMBEROFITEMLINES  numeric = NULL,  
+@NUMBEROFITEMS   numeric = NULL,  
+@NUMBEROFPAYMENTLINES int = NULL,  
+@RECEIPTID    nvarchar(250) = NULL,  
+@STAFF     nvarchar(250) = NULL,  
+@STORE     nvarchar(250) = NULL,  
+@TRANSACTIONID   nvarchar(250) = NULL,  
+@HDSOrderID    nvarchar(250) = NULL,  
+@TRANSDATE    date = NULL,  
+@TRANSTIME    int = NULL,  
+@TYPE     int = NULL,  
+@EXCHRATE    numeric = NULL,  
+@DATAAREAID    nvarchar(120) = NULL,  
+@DESCRIPTION   nvarchar (250) = NULL,  
+@BATCHTERMINALID  nvarchar (250) = NULL,  
+@BusinessDate   date = NULL,  
+@CREATEDONPOSTERMINAL nvarchar(100) = NULL,  
+@TIMEWHENTOTALPRESSED int = NULL,  
+@TIMEWHENTRANSCLOSED int = NULL,  
+@RECEIPTDATEREQUESTED DateTime2 = NULL,  
+@SUSPENDEDTRANSACTIONID nvarchar(250) = NULL,  
+@Payment_method   nvarchar(250) = NULL,  
+@ThirdPartyOrderId  nvarchar (250) = NULL,  
+@PickUpMode    nvarchar(250) = NULL,  
+@TableNum    nvarchar(6) = NULL,  
+@Comment    nvarchar(250) = NULL,  
+@CreatedDateTime  datetime = Null,  
+@DISCAMOUNT decimal(18,2) = NULL,  
+@DISCAMOUNTWITHOUTTAX decimal(18,2) = NULL,  
+@Source    nvarchar(250) = NULL,  
+@ISTAXEXEMPTEDFORPRICEINCLUSIVE   int = NULL,
+@CustomerName nvarchar(100) = NULL, 
+@Phone nvarchar(20) = NULL, 
+ @Address nvarchar(250) = NULL
+  
+AS  
+BEGIN  
+    -- Check if a record already exists with the same ThirdPartyOrderId and Type = 2  
+  
+  
+    -- Insert the record if no existing row is found  
+    INSERT INTO ax.RETAILTRANSACTIONTABLE  
+    (  
+        TERMINAL, BATCHID, CHANNEL, CURRENCY, GROSSAMOUNT, INVENTLOCATIONID, NETAMOUNT, NETPRICE, NUMBEROFITEMLINES, NUMBEROFITEMS,   
+        NUMBEROFPAYMENTLINES, RECEIPTID, SUSPENDEDTRANSACTIONID, STAFF, STORE, TRANSACTIONID, TRANSDATE,   
+        TRANSTIME, [TYPE], DATAAREAID, [DESCRIPTION], EXCHRATE,   
+        PaymentAmount, BATCHTERMINALID, BusinessDate, CREATEDONPOSTERMINAL, TIMEWHENTOTALPRESSED, TIMEWHENTRANSCLOSED, RECEIPTDATEREQUESTED,   
+        HDSOrderID, Payment_method, ThirdPartyOrderId, PickUpMode, TableNum, COMMENT, CREATEDDATETIME, Source, DISCAMOUNT, DISCAMOUNTWITHOUTTAX,
+		ISTAXEXEMPTEDFORPRICEINCLUSIVE ,CUSTOMERNAME,phone,address    
+    )   
+    VALUES   
+    (  
+        @TERMINAL, @BATCHID, @CHANNEL, @CURRENCY, @GROSSAMOUNT, @INVENTLOCATIONID,  @NETAMOUNT, @NETPRICE, @NUMBEROFITEMLINES, @NUMBEROFITEMS,  
+        @NUMBEROFPAYMENTLINES, @RECEIPTID, @SUSPENDEDTRANSACTIONID, @STAFF, @STORE, @TRANSACTIONID, @TRANSDATE,  
+        @TRANSTIME, @TYPE, @DATAAREAID, @DESCRIPTION, @EXCHRATE,  
+        @PaymentAmount, @BATCHTERMINALID, @BusinessDate, @CREATEDONPOSTERMINAL, @TIMEWHENTOTALPRESSED, @TIMEWHENTRANSCLOSED, @RECEIPTDATEREQUESTED,  
+        @HDSOrderID, @Payment_method, @ThirdPartyOrderId, @PickUpMode, @TableNum, ' ', @CreatedDateTime, @Source, @DISCAMOUNT, @DISCAMOUNTWITHOUTTAX,
+		@ISTAXEXEMPTEDFORPRICEINCLUSIVE ,@CustomerName,@Phone,@Address     
+    )  
+END  
+  
+
+
+
 
