@@ -96,5 +96,52 @@ BEGIN
     ALTER TABLE ax.retailtransactiontable
     ADD Address VARCHAR(250) NULL;
 END;
+-- Add CustName column if not exists
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'retailtransactiontable'
+      AND TABLE_SCHEMA = 'ax'
+      AND COLUMN_NAME = 'CustName'
+)
+BEGIN
+    ALTER TABLE ax.retailtransactiontable
+    ADD CustName VARCHAR(100) NULL;
+END;
+-- Add Order Channel column if not exists
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'retailtransactiontable'
+      AND TABLE_SCHEMA = 'ax'
+      AND COLUMN_NAME = 'PayMode'
+)
+BEGIN
+    ALTER TABLE ax.retailtransactiontable
+    ADD PayMode VARCHAR(50) NULL;
+END;
 
-
+-- Add Order Channel column if not exists
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'retailtransactiontable'
+      AND TABLE_SCHEMA = 'ax'
+      AND COLUMN_NAME = 'OrderChannel'
+)
+BEGIN
+    ALTER TABLE ax.retailtransactiontable
+    ADD OrderChannel VARCHAR(50) NULL;
+END;
+-- Add IsPaid column if not exists
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'retailtransactiontable'
+      AND TABLE_SCHEMA = 'ax'
+      AND COLUMN_NAME = 'IsPaid'
+)
+BEGIN
+    ALTER TABLE ax.retailtransactiontable
+    ADD IsPaid VARCHAR(10) NULL;
+END;

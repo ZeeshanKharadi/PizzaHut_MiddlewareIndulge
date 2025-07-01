@@ -961,6 +961,8 @@ WHERE rtt.TRANSACTIONID = @TransactionID and  rtt.ENTRYSTATUS <> 1 AND rtt.TYPE 
 ----------------------------------------------------------------------------------------------------------------------------------------------
   
   
+   
+  
   
 CREATE or alter Procedure [dbo].[usp_create_axRetailTransactionTable]  
   
@@ -1006,7 +1008,10 @@ CREATE or alter Procedure [dbo].[usp_create_axRetailTransactionTable]
 @ISTAXEXEMPTEDFORPRICEINCLUSIVE   int = NULL,
 @CustomerName nvarchar(100) = NULL, 
 @Phone nvarchar(20) = NULL, 
- @Address nvarchar(250) = NULL
+ @Address nvarchar(250) = NULL,
+ @IsPaid nvarchar(10) = NULL,
+ @OrderChannel nvarchar(50) = NULL,
+ @PayMode nvarchar(50) = NULL
   
 AS  
 BEGIN  
@@ -1021,8 +1026,8 @@ BEGIN
         TRANSTIME, [TYPE], DATAAREAID, [DESCRIPTION], EXCHRATE,   
         PaymentAmount, BATCHTERMINALID, BusinessDate, CREATEDONPOSTERMINAL, TIMEWHENTOTALPRESSED, TIMEWHENTRANSCLOSED, RECEIPTDATEREQUESTED,   
         HDSOrderID, Payment_method, ThirdPartyOrderId, PickUpMode, TableNum, COMMENT, CREATEDDATETIME, Source, DISCAMOUNT, DISCAMOUNTWITHOUTTAX,
-		ISTAXEXEMPTEDFORPRICEINCLUSIVE ,CUSTOMERNAME,phone,address    
-    )   
+		ISTAXEXEMPTEDFORPRICEINCLUSIVE ,CustName,Phone,Address  ,IsPaid ,OrderChannel  ,PayMode
+    )  
     VALUES   
     (  
         @TERMINAL, @BATCHID, @CHANNEL, @CURRENCY, @GROSSAMOUNT, @INVENTLOCATIONID,  @NETAMOUNT, @NETPRICE, @NUMBEROFITEMLINES, @NUMBEROFITEMS,  
@@ -1030,11 +1035,7 @@ BEGIN
         @TRANSTIME, @TYPE, @DATAAREAID, @DESCRIPTION, @EXCHRATE,  
         @PaymentAmount, @BATCHTERMINALID, @BusinessDate, @CREATEDONPOSTERMINAL, @TIMEWHENTOTALPRESSED, @TIMEWHENTRANSCLOSED, @RECEIPTDATEREQUESTED,  
         @HDSOrderID, @Payment_method, @ThirdPartyOrderId, @PickUpMode, @TableNum, ' ', @CreatedDateTime, @Source, @DISCAMOUNT, @DISCAMOUNTWITHOUTTAX,
-		@ISTAXEXEMPTEDFORPRICEINCLUSIVE ,@CustomerName,@Phone,@Address     
+		@ISTAXEXEMPTEDFORPRICEINCLUSIVE ,@CustomerName,@Phone,@Address ,@IsPaid  ,@OrderChannel  ,@PayMode
     )  
 END  
   
-
-
-
-
