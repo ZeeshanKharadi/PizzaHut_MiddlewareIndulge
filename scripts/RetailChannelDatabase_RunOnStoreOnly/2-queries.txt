@@ -261,6 +261,8 @@ CREATE TABLE [dbo].[ItemWisePrinterConfiguration](
 	[PrinterStatus] [bit] NOT NULL,
 	[PoolId] [varchar](50) NOT NULL,
 	[Floor] [varchar](50) NOT NULL,
+	[terminal] [varchar](100) NULL,
+
  CONSTRAINT [PK__ItemWise__3214EC078D3F7353] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
