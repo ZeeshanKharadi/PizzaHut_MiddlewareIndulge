@@ -1038,4 +1038,52 @@ BEGIN
 		@ISTAXEXEMPTEDFORPRICEINCLUSIVE ,@CustomerName,@Phone,@Address ,@IsPaid  ,@OrderChannel  ,@PayMode
     )  
 END  
+
+go
+create or ALTER proc [dbo].[sp_getProductDetailsfalse]
+@TransactionID varchar(36)
+as
+-- Step 1: Get distinct tender types
+WITH DistinctTender AS (
+    SELECT DISTINCT TENDERTYPEID, NAME
+    FROM ax.RETAILSTORETENDERTYPETABLE
+)
+select a.ITEMID,erpt.[NAME] AS Description, erpt.PRODUCT,PRODPOOLID ,rtt.CREATEDDATETIME,rtt.STAFF,rtt.TRANSACTIONID,rtt.RECEIPTID , a.QTY,a.Comment,rtt.TRANSACTIONID as "SUSPENDEDTRANSACTIONID",
+a.PRICE,
+a.TAXAMOUNT,
+a.NETAMOUNTINCLTAX,
+rtt.tablenum,
+rtt.terminal,
+rtt.DISCAMOUNT,
+a.DISCAMOUNT,
+a.TAXRATEPERCENT,
+rtt.CUSTNAME,
+rtt.[Address],
+rtt.[Phone],
+rtt.IsPAid,
+dt.NAME AS PayMode,
+CASE 
+        WHEN rit.Channel = '01' THEN 'DineIn'
+        WHEN rit.Channel = '02' THEN 'TakeAway'
+        WHEN rit.Channel = '03' THEN 'Delivery'
+        ELSE 'Unknown'
+    END AS Channel
+FROM [ax].RETAILTRANSACTIONTABLE AS rtt
+inner join ax.RETAILTRANSACTIONSALESTRANS  a on a.RECEIPTID = rtt.RECEIPTID
+LEFT JOIN (
+    SELECT TOP 1 rtpt.TRANSACTIONID, rtpt.TENDERTYPE
+    FROM ax.RETAILTRANSACTIONPAYMENTTRANS rtpt
+    WHERE rtpt.TRANSACTIONID = @TransactionID 
+    ORDER BY rtpt.AMOUNTCUR DESC
+) AS singlepay ON singlepay.TRANSACTIONID = rtt.TRANSACTIONID
+LEFT JOIN DistinctTender dt ON singlepay.TENDERTYPE = dt.TENDERTYPEID
+INNER JOIN [ax].INVENTTABLE it WITH (NOLOCK) ON it.ITEMID = a.ITEMID AND it.DATAAREAID = a.DATAAREAID
+INNER JOIN [ax].ECORESPRODUCTTRANSLATION erpt ON erpt.PRODUCT = it.PRODUCT AND erpt.LANGUAGEID = 'en-us'
+Inner join ax.retailinventtable  rit on rit.ITEMID = it.ITEMID
+WHERE rtt.TRANSACTIONID = @TransactionID and    rtt.ENTRYSTATUS <> 1 AND rtt.TYPE = 2   
+
+
+
+
+
   
