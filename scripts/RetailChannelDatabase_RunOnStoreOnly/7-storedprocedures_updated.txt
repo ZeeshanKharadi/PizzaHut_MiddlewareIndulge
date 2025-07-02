@@ -841,7 +841,7 @@ ALTER PROCEDURE [dbo].[usp_getTaxGroupAndBusinessDate]
 @taxcode NVARCHAR(60)
 AS
 BEGIN
-
+    SET @payment_method = 0;
     IF @payment_method = 0
     BEGIN
         DECLARE @tempTaxCode NVARCHAR(100);
