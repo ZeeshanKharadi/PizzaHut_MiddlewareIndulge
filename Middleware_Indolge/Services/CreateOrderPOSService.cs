@@ -87,13 +87,28 @@ namespace Middleware_Indolge.Services
                     StoreInfo getStoreinfo = await GetStoreInfoFromDynamicsAsync(request.Store);
                     _logger.LogInformation("Call SendOrderToExternalApiV2");
                     _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
-                    string apiResult = await SendOrderToExternalApiV2(request, getStoreinfo);
+                    string apiResult;
+                    try
+                    {
+                        apiResult = await SendOrderToExternalApiV2(request, getStoreinfo);
+                    }
+                    catch (Exception ex)
+                    {
+                        DeleteCurrentRecord(request.ThirdPartyOrderId);
+
+                        _logger.LogError(ex, "Store Url is not working or did not respond storeid "+ request.Store+".");
+                        response.Message = "Store Url is not working or did not respond for storeid "+request.Store+".";
+                        response.HttpStatusCode = 503; // Service Unavailable
+                        return response;
+                    }
                     if (string.IsNullOrWhiteSpace(apiResult) || (!apiResult.TrimStart().StartsWith("{") && !apiResult.TrimStart().StartsWith("[")))
                     {
                         _logger.LogInformation("Response   {method}", apiResult);
-
-                        response.Message = "API did not return valid JSON: " + apiResult;
-                        // return response;
+                        DeleteCurrentRecord(request.ThirdPartyOrderId);
+                        response.Message = "API did not return : " + apiResult;
+                        response.HttpStatusCode = 500; // Internal Server Error
+                        
+                        return response;
                     }
                     _logger.LogInformation("Response   {method}", System.Text.Json.JsonSerializer.Serialize(apiResult));
 
@@ -114,6 +129,7 @@ namespace Middleware_Indolge.Services
                     {
                         DeleteCurrentRecord(request.ThirdPartyOrderId);
                         response.Message = "Failed to create order By DT";
+                        response.HttpStatusCode = 500; 
                     }
                     // response = JsonConvert.DeserializeObject<CreateOrderResponse>(apiResult);
                     return response;

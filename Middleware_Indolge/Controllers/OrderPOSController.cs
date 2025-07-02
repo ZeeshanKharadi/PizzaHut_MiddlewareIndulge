@@ -25,7 +25,7 @@ namespace Middleware_Indolge.Controllers
 
         [HttpPost]
         [Route("createOrder")]
-        public async Task<CreateOrderResponse> CreateOrder(CreateOrderModel request)
+        public async Task<IActionResult> CreateOrder(CreateOrderModel request)
         {
             _logger.LogInformation("Call CreateOrder");
             _logger.LogInformation("Request   {method}", System.Text.Json.JsonSerializer.Serialize(request));
@@ -37,19 +37,19 @@ namespace Middleware_Indolge.Controllers
                 response = await _createOrderPOSService.CreateOrder(request);
                 _logger.LogInformation("Response CreateOrder  {method}", System.Text.Json.JsonSerializer.Serialize(response));
 
-                return response;
+                // Use the HttpStatusCode from the response if set, otherwise default to 200
+                int statusCode = response.HttpStatusCode > 0 ? response.HttpStatusCode : StatusCodes.Status200OK;
+                return StatusCode(statusCode, response);
             }
             catch (Exception ex)
             {
                 response.Result = null;
-                // response.HttpStatusCode = (int)HttpStatusCode.InternalServerError;
-                response.HttpStatusCode = 0;
-                //response.MessageType = (int)MessageType.Error;
+                response.HttpStatusCode = StatusCodes.Status500InternalServerError;
                 response.MessageType = 0;
                 response.Message = "server error msg: " + ex.Message + " | Inner exception:  " + ex.InnerException;
-                _logger.LogError(ex, "An error occurred while updating the order.");
+                _logger.LogError(ex, "An error occurred while creating the order.");
 
-                return response;
+                return StatusCode(response.HttpStatusCode, response);
             }
         }
 
