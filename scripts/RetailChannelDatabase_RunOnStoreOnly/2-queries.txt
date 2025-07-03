@@ -125,10 +125,12 @@ drop table if exists [dbo].[PaymentMethodsTable];
 drop table if exists [dbo].[ItemWisePrinterConfiguration];
 drop table if exists [ext].[FBRResponse];
 drop table if exists [dbo].[MCSDONUMBERTABLE];
+drop table if exists [ext].[MCSDONUMBERTABLE];
 drop table if exists [dbo].[MZNFBRINVOICING];
 drop table if exists [dbo].[MZNPOSTERMINALINFO];
 drop table if exists [dbo].[RETAILGIFTCARDTABLE];
 drop table if exists [dbo].[CustomerPayCash];
+drop table if exists [dbo].[SimplexRequestLog];
 
 
 USE [RetailChannelDatabase]
@@ -304,6 +306,27 @@ CREATE TABLE [dbo].[MCSDONUMBERTABLE](
 ) ON [PRIMARY]
 GO
 
+CREATE TABLE [ext].[MCSDONUMBERTABLE](
+	[TERMINAL] [nvarchar](10) NOT NULL,
+	[BATCHID] [bigint] NOT NULL,
+	[CHANNEL] [bigint] NOT NULL,
+	[RECEIPTID] [nvarchar](18) NOT NULL,
+	[REPLICATIONCOUNTERFROMORIGIN] [int] IDENTITY(1,1) NOT NULL,
+	[SHIFT] [nvarchar](10) NOT NULL,
+	[SHIFTDATE] [date] NOT NULL,
+	[STAFF] [nvarchar](25) NOT NULL,
+	[STORE] [nvarchar](10) NOT NULL,
+	[TRANSACTIONID] [nvarchar](44) NOT NULL,
+	[DATAAREAID] [nvarchar](4) NOT NULL,
+	[DONumber] [int] NOT NULL,
+ CONSTRAINT [PK_MCSDONUMBERTABLE] PRIMARY KEY CLUSTERED 
+(
+	[REPLICATIONCOUNTERFROMORIGIN] ASC,
+	[STORE] ASC,
+	[TRANSACTIONID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
 
 
 CREATE TABLE [dbo].[MZNFBRINVOICING](
@@ -373,7 +396,17 @@ GO
 
 
 
-
+CREATE TABLE [dbo].[SimplexRequestLog](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[json] [nvarchar](max) NULL,
+	[ThirdPartyOrderId] [nvarchar](20) NULL,
+	[storeId] [nvarchar](50) NULL,
+	[TerminalId] [nvarchar](50) NULL,
+	[ReceiptId] [nvarchar](50) NULL,
+	[Message] [nvarchar](500) NULL,
+	[createdOn] [datetime2](7) NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
 INSERT INTO [dbo].[CustomerPayCash] ([Cash])
 VALUES 
     (10),
