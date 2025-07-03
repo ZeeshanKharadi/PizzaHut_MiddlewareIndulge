@@ -1102,6 +1102,7 @@ BEGIN
 END  
 
 go
+
 create or ALTER proc [dbo].[sp_getProductDetailsfalse]
 @TransactionID varchar(36)
 as
@@ -1129,7 +1130,9 @@ CASE
         WHEN rit.Channel = '02' THEN 'TakeAway'
         WHEN rit.Channel = '03' THEN 'Delivery'
         ELSE 'Unknown'
-    END AS Channel
+    END AS Channel,
+	rtt.ThirdPartyOrderId,
+	rst.TAXIDENTIFICATIONNUMBER
 FROM [ax].RETAILTRANSACTIONTABLE AS rtt
 inner join ax.RETAILTRANSACTIONSALESTRANS  a on a.RECEIPTID = rtt.RECEIPTID
 LEFT JOIN (
@@ -1142,6 +1145,7 @@ LEFT JOIN DistinctTender dt ON singlepay.TENDERTYPE = dt.TENDERTYPEID
 INNER JOIN [ax].INVENTTABLE it WITH (NOLOCK) ON it.ITEMID = a.ITEMID AND it.DATAAREAID = a.DATAAREAID
 INNER JOIN [ax].ECORESPRODUCTTRANSLATION erpt ON erpt.PRODUCT = it.PRODUCT AND erpt.LANGUAGEID = 'en-us'
 Inner join ax.retailinventtable  rit on rit.ITEMID = it.ITEMID
+inner join ax.RETAILSTORETABLE rst on rst.STORENUMBER =rtt.STORE
 WHERE rtt.TRANSACTIONID = @TransactionID and    rtt.ENTRYSTATUS <> 1 AND rtt.TYPE = 2   
 
 
